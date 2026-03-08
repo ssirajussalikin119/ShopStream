@@ -1,0 +1,91 @@
+/* Root variables for breakpoints and container padding */
+:root {
+  --breakpoint-xs: 480px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  --breakpoint-3xl: 1920px;
+
+  --container-padding-xs: 1rem;
+  --container-padding-sm: 1.5rem;
+  --container-padding-md: 2rem;
+  --container-padding-lg: 2rem;
+  --container-padding-xl: 2.5rem;
+  --container-padding-2xl: 3rem;
+  --container-padding-3xl: 4rem;
+}
+
+/* Base container */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--container-padding-xs);
+  padding-right: var(--container-padding-xs);
+  box-sizing: border-box;
+  max-width: var(--breakpoint-xs);
+  transition: padding 0.2s ease, max-width 0.2s ease; /* smooth resizing */
+}
+
+/* Fluid container: full-width override */
+.container.fluid {
+  max-width: 100%;
+  padding-left: var(--container-padding-xs);
+  padding-right: var(--container-padding-xs);
+}
+
+/* Responsive max-widths & padding */
+@media (min-width: 640px) {
+  .container {
+    max-width: var(--breakpoint-sm);
+    padding-left: var(--container-padding-sm);
+    padding-right: var(--container-padding-sm);
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: var(--breakpoint-md);
+    padding-left: var(--container-padding-md);
+    padding-right: var(--container-padding-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: var(--breakpoint-lg);
+    padding-left: var(--container-padding-lg);
+    padding-right: var(--container-padding-lg);
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: var(--breakpoint-xl);
+    padding-left: var(--container-padding-xl);
+    padding-right: var(--container-padding-xl);
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    max-width: var(--breakpoint-2xl);
+    padding-left: var(--container-padding-2xl);
+    padding-right: var(--container-padding-2xl);
+  }
+}
+
+@media (min-width: 1920px) {
+  .container {
+    max-width: var(--breakpoint-3xl);
+    padding-left: var(--container-padding-3xl);
+    padding-right: var(--container-padding-3xl);
+  }
+}
+
+/* Optional: make sticky filters and grids more responsive */
+.sticky {
+  width: 100%;
+}
