@@ -1,0 +1,1 @@
+export { megaMenu } from "./catalogData";
