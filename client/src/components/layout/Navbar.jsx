@@ -2,9 +2,12 @@ import React, { useState } from "react";
 import { Search, Heart, ShoppingCart, User, Menu, X } from "lucide-react";
 import Dropdown from "../shared/Dropdown"; // Using the reusable dropdown
 import { megaMenu } from "../../data/menuData";
+import { useAuth } from "../../context/AuthContext";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isAuthenticated, user, logout } = useAuth();
 
   return (
     <header className="w-full bg-white shadow-sm sticky top-0 z-[100]">
@@ -50,6 +53,40 @@ const Navbar = () => {
             </button>
             <button className="p-2 hover:bg-gray-100 rounded-full">
               <User size={22} />
+              {!isAuthenticated ? (
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/login"
+                    className="px-3 py-1 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="px-3 py-1 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Register
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-1 p-2 hover:bg-gray-100 rounded-full"
+                  >
+                    <User size={22} />
+                    <span className="hidden sm:inline text-sm font-medium">
+                      {user?.email?.split("@")[0] || "Profile"}
+                    </span>
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className="px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50 rounded"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
             </button>
           </div>
         </div>
