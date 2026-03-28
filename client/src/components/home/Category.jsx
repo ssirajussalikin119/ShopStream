@@ -1,33 +1,61 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import Container from "../layout/Container/Container";
 
 const Category = () => {
-  const categories = [
-    {
-      id: 1,
-      name: "Electronics",
-      image:
-        "https://plus.unsplash.com/premium_photo-1683120889995-b6a309252981?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    },
-    {
-      id: 2,
-      name: "Fashion",
-      image:
-        "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=900&q=80",
-    },
-    {
-      id: 3,
-      name: "Home Decor",
-      image:
-        "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=80",
-    },
-    {
-      id: 4,
-      name: "Gadgets",
-      image:
-        "https://images.unsplash.com/photo-1468495244123-6c6c332eeece?q=80&w=721&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    },
-  ];
+  // State to store categories fetched from backend
+  const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch categories from backend API when component mounts
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/categories",
+        );
+        // Extract categories array safely from API payload
+        if (response.data.success) {
+          const payload = response.data.data;
+          const categoryList = Array.isArray(payload)
+            ? payload
+            : payload?.data || [];
+          setCategories(categoryList);
+        }
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+        // Keep empty array on error, user sees loading state
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []); // Empty dependency array = run once on mount
+
+  // Show loading state while fetching
+  if (isLoading) {
+    return (
+      <section className="bg-white py-20">
+        <Container className="mx-auto px-4 sm:px-6">
+          <div className="text-center text-gray-500">Loading categories...</div>
+        </Container>
+      </section>
+    );
+  }
+
+  // Show message if no categories found
+  if (categories.length === 0) {
+    return (
+      <section className="bg-white py-20">
+        <Container className="mx-auto px-4 sm:px-6">
+          <div className="text-center text-gray-500">
+            No categories available
+          </div>
+        </Container>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-white py-20">
@@ -48,7 +76,7 @@ const Category = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {categories.map((category) => (
             <div
-              key={category.id}
+              key={category._id}
               className="relative h-48 rounded-lg overflow-hidden group cursor-pointer"
             >
               <img

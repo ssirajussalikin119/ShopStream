@@ -1,53 +1,70 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { ShoppingBag, Star } from "lucide-react";
 import Container from "../layout/Container/Container";
 
 const Featured = () => {
-  const products = [
-    {
-      id: 1,
-      name: "Wireless Noise Cancelling Headphones",
-      brand: "Premium Tech",
-      price: "$249.00",
-      image:
-        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      id: 2,
-      name: "Wireless Noise Cancelling Headphones",
-      brand: "Premium Tech",
-      price: "$249.00",
-      image:
-        "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      id: 3,
-      name: "Wireless Noise Cancelling Headphones",
-      brand: "Premium Tech",
-      price: "$249.00",
-      image:
-        "https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      id: 4,
-      name: "Wireless Noise Cancelling Headphones",
-      brand: "Premium Tech",
-      price: "$249.00",
-      image:"https://plus.unsplash.com/premium_photo-1679513691474-73102089c117?q=80&w=2013&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-    },
-  ];
+  // State to store featured products fetched from backend
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch featured products from backend API when component mounts
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:5000/api/products?featured=true&limit=8",
+        );
+        // Extract products array safely from API payload
+        if (response.data.success) {
+          const payload = response.data.data;
+          const productList = Array.isArray(payload)
+            ? payload
+            : payload?.data || [];
+          setProducts(productList);
+        }
+      } catch (error) {
+        console.error("Failed to fetch featured products:", error);
+        // Keep empty array on error, user sees loading state
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []); // Empty dependency array = run once on mount
+
+  // Show loading state while fetching
+  if (isLoading) {
+    return (
+      <section className="bg-gray-50 py-20">
+        <Container className="mx-auto px-4 sm:px-6">
+          <div className="text-center text-gray-500">Loading products...</div>
+        </Container>
+      </section>
+    );
+  }
+
+  // Show message if no products found
+  if (products.length === 0) {
+    return (
+      <section className="bg-gray-50 py-20">
+        <Container className="mx-auto px-4 sm:px-6">
+          <div className="text-center text-gray-500">No products available</div>
+        </Container>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-gray-50 py-20">
       <Container className="mx-auto px-4 sm:px-6">
-        <h2 className="text-3xl font-bold text-gray-900 mb-10">
-          Trending Now
-        </h2>
+        <h2 className="text-3xl font-bold text-gray-900 mb-10">Trending Now</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {products.map((product) => (
             <div
-              key={product.id}
+              key={product._id}
               className="bg-white p-4 rounded-md shadow-sm border border-gray-100 group transition-all hover:shadow-md"
             >
               <div className="aspect-square bg-gray-100 rounded-md mb-4 overflow-hidden relative">
@@ -62,7 +79,7 @@ const Featured = () => {
                     size={12}
                     className="text-yellow-400 fill-yellow-400 mr-1"
                   />
-                  4.8
+                  {product.rating || "4.8"}
                 </div>
               </div>
 
@@ -76,7 +93,10 @@ const Featured = () => {
 
               <div className="flex justify-between items-center mt-4">
                 <span className="text-xl font-black text-gray-900">
-                  {product.price}
+                  $
+                  {typeof product.price === "number"
+                    ? product.price.toFixed(2)
+                    : product.price}
                 </span>
 
                 <button className="p-2 bg-gray-900 text-white rounded-md hover:bg-blue-600 transition-colors cursor-pointer">
