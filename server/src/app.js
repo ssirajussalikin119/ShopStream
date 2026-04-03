@@ -3,6 +3,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
+const cartRoutes = require("./routes/cartRoutes");
 const errorMiddleware = require("./middlewares/errorMiddleware");
 const notFoundMiddleware = require("./middlewares/notFoundMiddleware");
 
@@ -27,6 +28,7 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/cart", cartRoutes);
 
 // Error handling - must be last
 app.use(notFoundMiddleware);

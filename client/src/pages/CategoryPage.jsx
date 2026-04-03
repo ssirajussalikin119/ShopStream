@@ -4,6 +4,7 @@ import { ChevronDown, SlidersHorizontal, Star } from "lucide-react";
 import Container from "../components/layout/Container/Container";
 import { shopCategories } from "../data/catalogData";
 import { productAPI } from "../utils/api";
+import AddToCartButton from "../components/cart/AddToCartButton";
 
 const SORT_OPTIONS = [
   { label: "Featured", value: "featured" },
@@ -365,9 +366,7 @@ const CategoryPage = () => {
                             ? `${product.stockCount} in stock`
                             : "Out of stock"}
                         </span>
-                        <button className="rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-600">
-                          Add to Cart
-                        </button>
+                        <AddToCartButton productId={product._id} disabled={!product.inStock} />
                       </div>
                     </div>
                   </article>
