@@ -2,53 +2,36 @@ import axios from "axios";
 
 const API_BASE_URL = "http://localhost:5000/api";
 
-// Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  headers: { "Content-Type": "application/json" },
 });
 
-// Add request interceptor to include token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("authToken");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error)
 );
 
-// Add response interceptor for error handling
 api.interceptors.response.use(
-  (response) => {
-    return response.data;
-  },
+  (response) => response.data,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid - clear auth
       localStorage.removeItem("authToken");
       localStorage.removeItem("authUser");
       window.location.href = "/login";
     }
     return Promise.reject(error.response?.data || error.message);
-  },
+  }
 );
 
-// Auth endpoints
 export const authAPI = {
   register: (email, password) => {
     const fallbackName = email?.split("@")[0]?.trim() || "User";
-    return api.post("/auth/register", {
-      name: fallbackName,
-      email,
-      password,
-    });
+    return api.post("/auth/register", { name: fallbackName, email, password });
   },
   login: (email, password) => api.post("/auth/login", { email, password }),
   getMe: () => api.get("/auth/me"),
@@ -62,6 +45,33 @@ export const productAPI = {
   getByCategory: async (params) => {
     const response = await api.get("/products", { params });
     return response.data || { products: [], filters: {} };
+  },
+};
+
+export const cartAPI = {
+  getCart: async () => {
+    const response = await api.get("/cart");
+    return response.data || { items: [], itemCount: 0, subtotal: 0 };
+  },
+  addItem: async (productId, quantity = 1) => {
+    const response = await api.post("/cart/items", { productId, quantity });
+    return response.data;
+  },
+  updateItem: async (productId, quantity) => {
+    const response = await api.patch(`/cart/items/${productId}`, { quantity });
+    return response.data;
+  },
+  removeItem: async (productId) => {
+    const response = await api.delete(`/cart/items/${productId}`);
+    return response.data;
+  },
+  clearCart: async () => {
+    const response = await api.delete("/cart");
+    return response.data;
+  },
+  checkout: async () => {
+    const response = await api.post("/cart/checkout");
+    return response.data;
   },
 };
 

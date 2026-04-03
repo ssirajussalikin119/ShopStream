@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { Heart, ShoppingCart, Menu, Search, X } from "lucide-react";
-import Dropdown from "../shared/Dropdown"; // Using the reusable dropdown
+import Dropdown from "../shared/Dropdown";
 import { shopCategories } from "../../data/catalogData";
 import { useAuth } from "../../context/AuthContext";
+import { useCart } from "../../context/CartContext";
 import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
+  const { itemCount, openCart } = useCart();
 
   return (
     <header className="w-full bg-white shadow-sm sticky top-0 z-[100]">
@@ -70,12 +72,21 @@ const Navbar = () => {
             <button className="p-2 hover:bg-gray-100 rounded-full hidden sm:flex">
               <Heart size={22} />
             </button>
-            <button className="p-2 hover:bg-gray-100 rounded-full relative">
+
+            {/* Cart button */}
+            <button
+              onClick={openCart}
+              className="p-2 hover:bg-gray-100 rounded-full relative transition-colors"
+              aria-label={`Shopping cart${itemCount > 0 ? `, ${itemCount} items` : ""}`}
+            >
               <ShoppingCart size={22} />
-              <span className="absolute top-1 right-1 bg-blue-600 text-white text-[10px] font-bold px-1 rounded-full">
-                3
-              </span>
+              {itemCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-blue-600 text-white text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1 leading-none shadow-sm">
+                  {itemCount > 99 ? "99+" : itemCount}
+                </span>
+              )}
             </button>
+
             {!isAuthenticated ? (
               <div className="flex items-center gap-2">
                 <Link
@@ -172,20 +183,20 @@ const Navbar = () => {
                 </details>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="block font-medium text-lg text-red-600"
-                >
+                <a href="#" className="block font-medium text-lg text-red-600">
                   Deals
                 </a>
               </li>
               <li>
                 <button
                   className="flex items-center gap-2 font-medium text-lg"
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => {
+                    setMobileOpen(false);
+                    openCart();
+                  }}
                 >
-                  <Search size={18} />
-                  Search
+                  <ShoppingCart size={18} />
+                  Cart {itemCount > 0 && `(${itemCount})`}
                 </button>
               </li>
             </ul>
