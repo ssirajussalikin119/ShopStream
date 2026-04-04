@@ -1,3 +1,4 @@
+import FavouritesPage from "./pages/FavouritesPage";
 import React from "react";
 import { Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
@@ -20,6 +21,7 @@ const App = () => {
         <Navbar />
         <CartDrawer />
         <Routes>
+          <Route path="/favourites" element={<FavouritesPage />} />
           <Route path="/" element={<Home />} />
           <Route path="/category/:slug" element={<CategoryPage />} />
           <Route path="/contact" element={<Contact />} />

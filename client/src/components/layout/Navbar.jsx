@@ -83,7 +83,9 @@ const Navbar = () => {
 
           <div className="flex items-center gap-1 sm:gap-3 shrink-0">
             <button className="p-2 hover:bg-gray-100 rounded-full hidden sm:flex relative">
-              <Heart size={22} />
+              <Link to="/favourites">
+  <Heart size={22} />
+</Link>
               {favCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1 leading-none shadow-sm">
                   {favCount > 99 ? "99+" : favCount}
