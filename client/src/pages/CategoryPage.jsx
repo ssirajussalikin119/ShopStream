@@ -1,6 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
-import { ChevronDown, SlidersHorizontal, Star } from "lucide-react";
+import {
+  ChevronDown,
+  Search,
+  SlidersHorizontal,
+  Star,
+} from "lucide-react";
 import Container from "../components/layout/Container/Container";
 import { shopCategories } from "../data/catalogData";
 import { productAPI } from "../utils/api";
@@ -32,6 +37,7 @@ const formatPrice = (price) =>
 const CategoryPage = () => {
   const { slug } = useParams();
   const category = shopCategories.find((item) => item.slug === slug);
+
   const [products, setProducts] = useState([]);
   const [filters, setFilters] = useState({
     brands: [],
@@ -42,6 +48,7 @@ const CategoryPage = () => {
   const [selectedSubcategories, setSelectedSubcategories] = useState([]);
   const [selectedPriceRange, setSelectedPriceRange] = useState("all");
   const [sortBy, setSortBy] = useState("featured");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -50,6 +57,7 @@ const CategoryPage = () => {
     setSelectedSubcategories([]);
     setSelectedPriceRange("all");
     setSortBy("featured");
+    setSearchQuery("");
   }, [slug]);
 
   useEffect(() => {
@@ -114,7 +122,36 @@ const CategoryPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [category, selectedBrands, selectedPriceRange, selectedSubcategories, slug, sortBy]);
+  }, [
+    category,
+    selectedBrands,
+    selectedPriceRange,
+    selectedSubcategories,
+    slug,
+    sortBy,
+  ]);
+
+  const filteredProducts = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return products;
+    }
+
+    return products.filter((product) => {
+      const searchableText = [
+        product.name,
+        product.description,
+        product.brand,
+        product.subcategory,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(normalizedQuery);
+    });
+  }, [products, searchQuery]);
 
   if (!category) {
     return <Navigate to="/" replace />;
@@ -146,6 +183,7 @@ const CategoryPage = () => {
                   setSelectedSubcategories([]);
                   setSelectedPriceRange("all");
                   setSortBy("featured");
+                  setSearchQuery("");
                 }}
               >
                 Reset
@@ -230,36 +268,56 @@ const CategoryPage = () => {
           </aside>
 
           <div>
-            <div className="mb-6 flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500">
-                  {loading ? "Loading products..." : `${products.length} products found`}
-                </p>
-                <h2 className="text-2xl font-black text-gray-900">
-                  {category.name}
-                </h2>
-              </div>
-
-              <label className="flex items-center gap-3 text-sm font-semibold text-gray-700">
-                Sort by
-                <div className="relative">
-                  <select
-                    value={sortBy}
-                    onChange={(event) => setSortBy(event.target.value)}
-                    className="appearance-none rounded-full border border-gray-200 bg-gray-50 py-2 pl-4 pr-10 outline-none"
-                  >
-                    {SORT_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={16}
-                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
-                  />
+            <div className="mb-6 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">
+                    {loading
+                      ? "Loading products..."
+                      : `${filteredProducts.length} products found`}
+                  </p>
+                  <h2 className="text-2xl font-black text-gray-900">
+                    {category.name}
+                  </h2>
                 </div>
-              </label>
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <div className="relative">
+                    <Search
+                      size={16}
+                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+                    />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder="Search this category..."
+                      className="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 outline-none sm:w-[260px]"
+                    />
+                  </div>
+
+                  <label className="flex items-center gap-3 text-sm font-semibold text-gray-700">
+                    Sort by
+                    <div className="relative">
+                      <select
+                        value={sortBy}
+                        onChange={(event) => setSortBy(event.target.value)}
+                        className="appearance-none rounded-full border border-gray-200 bg-gray-50 py-2 pl-4 pr-10 outline-none"
+                      >
+                        {SORT_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown
+                        size={16}
+                        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                      />
+                    </div>
+                  </label>
+                </div>
+              </div>
             </div>
 
             {error ? (
@@ -298,9 +356,20 @@ const CategoryPage = () => {
               </div>
             ) : null}
 
-            {!loading && !error && products.length > 0 ? (
+            {!loading && !error && products.length > 0 && filteredProducts.length === 0 ? (
+              <div className="rounded-3xl border border-gray-100 bg-white px-6 py-10 text-center shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900">
+                  No products found for "{searchQuery}"
+                </h3>
+                <p className="mt-2 text-gray-500">
+                  Try a different keyword in this category.
+                </p>
+              </div>
+            ) : null}
+
+            {!loading && !error && filteredProducts.length > 0 ? (
               <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <article
                     key={product._id}
                     className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg"
@@ -360,13 +429,18 @@ const CategoryPage = () => {
 
                       <div className="flex items-center justify-between gap-4">
                         <span
-                          className={`text-sm font-semibold ${product.inStock ? "text-green-600" : "text-red-600"}`}
+                          className={`text-sm font-semibold ${
+                            product.inStock ? "text-green-600" : "text-red-600"
+                          }`}
                         >
                           {product.inStock
                             ? `${product.stockCount} in stock`
                             : "Out of stock"}
                         </span>
-                        <AddToCartButton productId={product._id} disabled={!product.inStock} />
+                        <AddToCartButton
+                          productId={product._id}
+                          disabled={!product.inStock}
+                        />
                       </div>
                     </div>
                   </article>
