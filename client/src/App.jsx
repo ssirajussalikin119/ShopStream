@@ -1,3 +1,4 @@
+import SearchPage from "./pages/SearchPage";
 import FavouritesPage from "./pages/FavouritesPage";
 import React from "react";
 import { Route, Routes } from "react-router-dom";
@@ -21,6 +22,7 @@ const App = () => {
         <Navbar />
         <CartDrawer />
         <Routes>
+          <Route path="/search" element={<SearchPage />} />
           <Route path="/favourites" element={<FavouritesPage />} />
           <Route path="/" element={<Home />} />
           <Route path="/category/:slug" element={<CategoryPage />} />
