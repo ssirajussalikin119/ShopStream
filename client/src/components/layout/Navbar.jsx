@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Heart, ShoppingCart, Menu, Search, X } from "lucide-react";
 import Dropdown from "../shared/Dropdown";
 import { shopCategories } from "../../data/catalogData";
@@ -8,14 +8,29 @@ import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [favCount, setFavCount] = useState(0);
   const { isAuthenticated, user, logout } = useAuth();
   const { itemCount, openCart } = useCart();
+
+  useEffect(() => {
+    const updateFavouriteCount = () => {
+      const saved = localStorage.getItem("favourites");
+      const favourites = saved ? JSON.parse(saved) : [];
+      setFavCount(favourites.length);
+    };
+
+    updateFavouriteCount();
+    window.addEventListener("favouritesUpdated", updateFavouriteCount);
+
+    return () => {
+      window.removeEventListener("favouritesUpdated", updateFavouriteCount);
+    };
+  }, []);
 
   return (
     <header className="w-full bg-white shadow-sm sticky top-0 z-[100]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16 gap-4">
-          {/* Mobile Menu Toggle */}
           <button
             className="lg:hidden p-2 -ml-2 text-gray-600"
             onClick={() => setMobileOpen(true)}
@@ -23,7 +38,6 @@ const Navbar = () => {
             <Menu size={26} />
           </button>
 
-          {/* Logo */}
           <Link
             to="/"
             className="text-2xl font-black text-blue-600 tracking-tight shrink-0"
@@ -31,7 +45,6 @@ const Navbar = () => {
             SHOP<span className="text-gray-900">STREAM</span>
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-8 text-sm font-semibold text-gray-800">
             <Link to="/" className="hover:text-blue-600 transition-colors">
               Home
@@ -61,19 +74,23 @@ const Navbar = () => {
             >
               Deals
             </a>
+
             <button className="flex items-center gap-2 hover:text-blue-600 transition-colors">
               <Search size={16} />
               Search
             </button>
           </nav>
 
-          {/* Right Icons */}
           <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-            <button className="p-2 hover:bg-gray-100 rounded-full hidden sm:flex">
+            <button className="p-2 hover:bg-gray-100 rounded-full hidden sm:flex relative">
               <Heart size={22} />
+              {favCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1 leading-none shadow-sm">
+                  {favCount > 99 ? "99+" : favCount}
+                </span>
+              )}
             </button>
 
-            {/* Cart button */}
             <button
               onClick={openCart}
               className="p-2 hover:bg-gray-100 rounded-full relative transition-colors"
@@ -122,17 +139,14 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* --- MOBILE SIDEBAR DRAWER --- */}
       <div
         className={`fixed inset-0 z-[110] lg:hidden transition-all ${mobileOpen ? "visible" : "invisible"}`}
       >
-        {/* Backdrop */}
         <div
           className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${mobileOpen ? "opacity-100" : "opacity-0"}`}
           onClick={() => setMobileOpen(false)}
         />
 
-        {/* Drawer Content */}
         <div
           className={`absolute top-0 left-0 w-72 h-full bg-white shadow-2xl transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
