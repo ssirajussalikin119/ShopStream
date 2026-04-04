@@ -4,13 +4,15 @@ import Dropdown from "../shared/Dropdown";
 import { shopCategories } from "../../data/catalogData";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [favCount, setFavCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
   const { isAuthenticated, user, logout } = useAuth();
   const { itemCount, openCart } = useCart();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const updateFavouriteCount = () => {
@@ -26,6 +28,17 @@ const Navbar = () => {
       window.removeEventListener("favouritesUpdated", updateFavouriteCount);
     };
   }, []);
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    const trimmedQuery = searchQuery.trim();
+
+    if (!trimmedQuery) return;
+
+    navigate(`/search?q=${encodeURIComponent(trimmedQuery)}`);
+    setSearchQuery("");
+    setMobileOpen(false);
+  };
 
   return (
     <header className="w-full bg-white shadow-sm sticky top-0 z-[100]">
@@ -75,23 +88,38 @@ const Navbar = () => {
               Deals
             </a>
 
-            <button className="flex items-center gap-2 hover:text-blue-600 transition-colors">
-              <Search size={16} />
-              Search
-            </button>
+            <form onSubmit={handleSearch} className="flex items-center gap-2">
+              <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-2">
+                <Search size={16} className="text-gray-500" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search products..."
+                  className="ml-2 w-36 bg-transparent text-sm outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                className="text-sm font-semibold hover:text-blue-600 transition-colors"
+              >
+                Search
+              </button>
+            </form>
           </nav>
 
           <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-            <button className="p-2 hover:bg-gray-100 rounded-full hidden sm:flex relative">
-              <Link to="/favourites">
-  <Heart size={22} />
-</Link>
+            <Link
+              to="/favourites"
+              className="p-2 hover:bg-gray-100 rounded-full hidden sm:flex relative"
+            >
+              <Heart size={22} />
               {favCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-black min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1 leading-none shadow-sm">
                   {favCount > 99 ? "99+" : favCount}
                 </span>
               )}
-            </button>
+            </Link>
 
             <button
               onClick={openCart}
@@ -160,6 +188,19 @@ const Navbar = () => {
           </div>
 
           <div className="overflow-y-auto h-[calc(100vh-70px)] p-4">
+            <form onSubmit={handleSearch} className="mb-6">
+              <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 px-3 py-2">
+                <Search size={16} className="text-gray-500" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search products..."
+                  className="ml-2 w-full bg-transparent text-sm outline-none"
+                />
+              </div>
+            </form>
+
             <ul className="space-y-4">
               <li>
                 <Link
@@ -202,6 +243,15 @@ const Navbar = () => {
                 <a href="#" className="block font-medium text-lg text-red-600">
                   Deals
                 </a>
+              </li>
+              <li>
+                <Link
+                  to="/favourites"
+                  className="block font-medium text-lg"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Favourites {favCount > 0 && `(${favCount})`}
+                </Link>
               </li>
               <li>
                 <button
