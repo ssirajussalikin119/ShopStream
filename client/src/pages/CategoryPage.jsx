@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import {
   ChevronDown,
+  Heart,
   Search,
   SlidersHorizontal,
   Star,
@@ -49,6 +50,10 @@ const CategoryPage = () => {
   const [selectedPriceRange, setSelectedPriceRange] = useState("all");
   const [sortBy, setSortBy] = useState("featured");
   const [searchQuery, setSearchQuery] = useState("");
+  const [favourites, setFavourites] = useState(() => {
+    const saved = localStorage.getItem("favourites");
+    return saved ? JSON.parse(saved) : [];
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -152,6 +157,20 @@ const CategoryPage = () => {
       return searchableText.includes(normalizedQuery);
     });
   }, [products, searchQuery]);
+
+  const toggleFavourite = (productId) => {
+    let updatedFavourites = [];
+
+    if (favourites.includes(productId)) {
+      updatedFavourites = favourites.filter((id) => id !== productId);
+    } else {
+      updatedFavourites = [...favourites, productId];
+    }
+
+    setFavourites(updatedFavourites);
+    localStorage.setItem("favourites", JSON.stringify(updatedFavourites));
+    window.dispatchEvent(new Event("favouritesUpdated"));
+  };
 
   if (!category) {
     return <Navigate to="/" replace />;
@@ -356,7 +375,10 @@ const CategoryPage = () => {
               </div>
             ) : null}
 
-            {!loading && !error && products.length > 0 && filteredProducts.length === 0 ? (
+            {!loading &&
+            !error &&
+            products.length > 0 &&
+            filteredProducts.length === 0 ? (
               <div className="rounded-3xl border border-gray-100 bg-white px-6 py-10 text-center shadow-sm">
                 <h3 className="text-xl font-bold text-gray-900">
                   No products found for "{searchQuery}"
@@ -380,6 +402,22 @@ const CategoryPage = () => {
                         alt={product.name}
                         className="h-full w-full object-cover"
                       />
+
+                      <button
+                        onClick={() => toggleFavourite(product._id)}
+                        className="absolute right-4 top-4 rounded-full bg-white p-2 shadow-sm hover:bg-red-50"
+                        aria-label="Toggle favourite"
+                      >
+                        <Heart
+                          size={18}
+                          className={
+                            favourites.includes(product._id)
+                              ? "fill-red-500 text-red-500"
+                              : "text-gray-400"
+                          }
+                        />
+                      </button>
+
                       {product.compareAtPrice &&
                       product.compareAtPrice > product.price ? (
                         <span className="absolute left-4 top-4 rounded-full bg-white px-3 py-1 text-xs font-bold text-red-600 shadow-sm">
