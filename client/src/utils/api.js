@@ -29,10 +29,8 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  register: (email, password) => {
-    const fallbackName = email?.split("@")[0]?.trim() || "User";
-    return api.post("/auth/register", { name: fallbackName, email, password });
-  },
+  register: (name, email, password) =>
+    api.post("/auth/register", { name: name || email?.split("@")[0] || "User", email, password }),
   login: (email, password) => api.post("/auth/login", { email, password }),
   getMe: () => api.get("/auth/me"),
 };
@@ -45,6 +43,10 @@ export const productAPI = {
   getByCategory: async (params) => {
     const response = await api.get("/products", { params });
     return response.data || { products: [], filters: {} };
+  },
+  getById: async (id) => {
+    const response = await api.get(`/products/${id}`);
+    return response.data || { product: null, related: [] };
   },
 };
 
@@ -69,10 +71,36 @@ export const cartAPI = {
     const response = await api.delete("/cart");
     return response.data;
   },
-  checkout: async () => {
-    const response = await api.post("/cart/checkout");
+};
+
+export const orderAPI = {
+  placeOrder: async (payload) => {
+    const response = await api.post("/orders/checkout", payload);
     return response.data;
   },
+  getOrders: async () => {
+    const response = await api.get("/orders");
+    return response.data || [];
+  },
+  getOrder: async (orderId) => {
+    const response = await api.get(`/orders/${orderId}`);
+    return response.data;
+  },
+};
+
+export const offerAPI = {
+  getOffers: async (params) => {
+    const response = await api.get("/offers", { params });
+    return response.data || [];
+  },
+  validateCode: async (code) => {
+    const response = await api.get(`/offers/validate/${code}`);
+    return response.data;
+  },
+};
+
+export const newsletterAPI = {
+  subscribe: (email) => api.post("/newsletter/subscribe", { email }),
 };
 
 export default api;

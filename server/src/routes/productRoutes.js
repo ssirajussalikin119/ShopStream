@@ -1,13 +1,10 @@
 const express = require("express");
-const {
-  getFeaturedProducts,
-  getProducts,
-} = require("../controllers/productController");
+const { getFeaturedProducts, getProducts, getProductById } = require("../controllers/productController");
 
 const router = express.Router();
 
-// GET /api/products/featured - Fetch products for the home page
 router.get("/featured", getFeaturedProducts);
 router.get("/", getProducts);
+router.get("/:id", getProductById);
 
 module.exports = router;

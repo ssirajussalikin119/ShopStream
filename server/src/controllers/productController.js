@@ -8,51 +8,26 @@ const getFeaturedProducts = asyncHandler(async (req, res) => {
     .limit(8)
     .lean();
 
-  return sendResponse(
-    res,
-    200,
-    true,
-    "Featured products fetched successfully",
-    products,
-  );
+  return sendResponse(res, 200, true, "Featured products fetched successfully", products);
 });
 
 const getProducts = asyncHandler(async (req, res) => {
-  const {
-    category,
-    brand,
-    minPrice,
-    maxPrice,
-    subcategory,
-    sort = "featured",
-  } = req.query;
+  const { category, brand, minPrice, maxPrice, subcategory, sort = "featured", q, limit } = req.query;
 
   const query = {};
 
-  if (category) {
-    query.categorySlug = category;
-  }
-
-  if (brand) {
-    query.brand = { $in: brand.split(",").map((item) => item.trim()) };
-  }
-
-  if (subcategory) {
-    query.subcategory = {
-      $in: subcategory.split(",").map((item) => item.trim()),
-    };
-  }
-
+  if (category) query.categorySlug = category;
+  if (brand) query.brand = { $in: brand.split(",").map((item) => item.trim()) };
+  if (subcategory) query.subcategory = { $in: subcategory.split(",").map((item) => item.trim()) };
   if (minPrice || maxPrice) {
     query.price = {};
+    if (minPrice) query.price.$gte = Number(minPrice);
+    if (maxPrice) query.price.$lte = Number(maxPrice);
+  }
 
-    if (minPrice) {
-      query.price.$gte = Number(minPrice);
-    }
-
-    if (maxPrice) {
-      query.price.$lte = Number(maxPrice);
-    }
+  if (q) {
+    const regex = new RegExp(q.trim(), "i");
+    query.$or = [{ name: regex }, { description: regex }, { brand: regex }, { subcategory: regex }, { categoryName: regex }];
   }
 
   const sortMap = {
@@ -63,34 +38,30 @@ const getProducts = asyncHandler(async (req, res) => {
     rating: { rating: -1, reviewCount: -1 },
   };
 
-  const products = await Product.find(query)
-    .sort(sortMap[sort] || sortMap.featured)
-    .lean();
+  let queryBuilder = Product.find(query).sort(sortMap[sort] || sortMap.featured);
+  if (limit) queryBuilder = queryBuilder.limit(Number(limit));
+  const products = await queryBuilder.lean();
 
-  const availableBrands = await Product.distinct("brand", category ? { categorySlug: category } : {});
-  const availableSubcategories = await Product.distinct(
-    "subcategory",
-    category ? { categorySlug: category } : {},
-  );
+  const filterBase = category ? { categorySlug: category } : {};
+  const availableBrands = await Product.distinct("brand", filterBase);
+  const availableSubcategories = await Product.distinct("subcategory", filterBase);
   const priceRange = await Product.aggregate([
     ...(category ? [{ $match: { categorySlug: category } }] : []),
-    {
-      $group: {
-        _id: null,
-        minPrice: { $min: "$price" },
-        maxPrice: { $max: "$price" },
-      },
-    },
+    { $group: { _id: null, minPrice: { $min: "$price" }, maxPrice: { $max: "$price" } } },
   ]);
 
   return sendResponse(res, 200, true, "Products fetched successfully", {
     products,
-    filters: {
-      brands: availableBrands.sort(),
-      subcategories: availableSubcategories.sort(),
-      priceRange: priceRange[0] || { minPrice: 0, maxPrice: 0 },
-    },
+    filters: { brands: availableBrands.sort(), subcategories: availableSubcategories.sort(), priceRange: priceRange[0] || { minPrice: 0, maxPrice: 0 } },
   });
 });
 
-module.exports = { getFeaturedProducts, getProducts };
+// GET /api/products/:id
+const getProductById = asyncHandler(async (req, res) => {
+  const product = await Product.findById(req.params.id).lean();
+  if (!product) { res.status(404); throw new Error("Product not found"); }
+  const related = await Product.find({ categorySlug: product.categorySlug, _id: { $ne: product._id } }).limit(4).lean();
+  return sendResponse(res, 200, true, "Product fetched successfully", { product, related });
+});
+
+module.exports = { getFeaturedProducts, getProducts, getProductById };
