@@ -1,139 +1,373 @@
-import React, { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
-import { authAPI } from "../utils/api";
-import { Link } from "react-router-dom";
-import { User, Mail, Shield, Calendar, Package, Heart, ShoppingCart, LogOut, Edit2, CheckCircle } from "lucide-react";
-import Container from "../components/layout/Container/Container";
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import {
+  authAPI,
+  cartAPI,
+  ordersAPI,
+  profileAPI,
+  wishlistAPI,
+} from '../utils/api';
 
 const ProfilePage = () => {
-  const { user, token, logout } = useAuth();
+  const { user, token } = useAuth();
+  const isSellerAccount =
+    user?.role === 'seller' ||
+    user?.accountType === 'seller' ||
+    user?.accountType === 'both';
   const [userData, setUserData] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [editName, setEditName] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!token) { setError("No authentication token"); setLoading(false); return; }
-    authAPI.getMe()
-      .then((res) => { if (res.success) setUserData(res.data); else setError(res.message); })
-      .catch((e) => setError(e?.message || "Failed to load profile"))
-      .finally(() => setLoading(false));
-  }, [token]);
+    if (isSellerAccount) {
+      setLoading(false);
+      return;
+    }
 
-  const displayUser = userData || user;
+    const fetchUserData = async () => {
+      try {
+        if (!token) {
+          setError('No authentication token found');
+          setLoading(false);
+          return;
+        }
 
-  const handleSaveName = () => {
-    if (!newName.trim()) return;
-    setSaved(true);
-    setEditName(false);
-    setTimeout(() => setSaved(false), 2000);
-  };
+        const [
+          profileResponse,
+          dashboardResponse,
+          ordersResponse,
+          wishlistResponse,
+        ] = await Promise.all([
+          authAPI.getMe(),
+          profileAPI.getDashboard(),
+          ordersAPI.getMyOrders(),
+          wishlistAPI.getWishlist(),
+        ]);
 
-  if (loading) {
+        if (profileResponse.success) {
+          setUserData(profileResponse.data);
+        }
+
+        if (dashboardResponse.success) {
+          setDashboard(dashboardResponse.data);
+        }
+
+        if (ordersResponse.success) {
+          setOrders(ordersResponse.data || []);
+        }
+
+        if (wishlistResponse.success) {
+          setWishlist(wishlistResponse.data?.items || []);
+        }
+      } catch (err) {
+        setError(err.message || 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [isSellerAccount, token]);
+
+  if (isSellerAccount) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent" />
+      <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6">
+        <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Seller Account Profile
+          </h1>
+          <p className="mt-2 text-gray-600">
+            Sellers manage their profile from the Seller Dashboard.
+          </p>
+          <div className="mt-6">
+            <Link
+              to="/seller/dashboard"
+              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
+            >
+              Go to Seller Dashboard
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Loading...
+      </div>
+    );
+  }
+
+  const displayUser = userData || user;
+  const accountOverview = dashboard?.accountOverview;
+  const quickLinks = dashboard?.quickLinks || [];
+
+  const handleReorder = async (orderId) => {
+    try {
+      const response = await ordersAPI.reorder(orderId);
+      if (response.success) {
+        setSuccessMessage('Order items moved to your cart.');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to reorder');
+    }
+  };
+
+  const handleMoveWishlistToCart = async (productId) => {
+    try {
+      await cartAPI.addItem(productId, 1);
+      const response = await wishlistAPI.removeItem(productId);
+      if (response.success) {
+        setWishlist(response.data?.items || []);
+        setSuccessMessage('Product moved from wishlist to cart.');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to move item to cart');
+    }
+  };
+
+  const handleRemoveWishlistItem = async (productId) => {
+    try {
+      const response = await wishlistAPI.removeItem(productId);
+      if (response.success) {
+        setWishlist(response.data?.items || []);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to remove wishlist item');
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-gray-50 py-12">
-      <Container>
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-black text-gray-900 mb-8">My Account</h1>
-
-          {error && (
-            <div className="bg-red-50 border border-red-100 text-red-700 rounded-2xl p-4 mb-6">{error}</div>
-          )}
-
-          {displayUser && (
-            <div className="space-y-5">
-              {/* Avatar card */}
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 flex items-center gap-5">
-                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full w-20 h-20 flex items-center justify-center text-3xl font-black shrink-0">
-                  {(displayUser.name || displayUser.email || "U")[0].toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  {editName ? (
-                    <div className="flex gap-2 items-center">
-                      <input
-                        autoFocus
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter your name"
-                      />
-                      <button onClick={handleSaveName} className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition">Save</button>
-                      <button onClick={() => setEditName(false)} className="text-gray-400 text-sm">Cancel</button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-black text-gray-900">{newName || displayUser.name || "ShopStream User"}</h2>
-                      <button onClick={() => { setEditName(true); setNewName(newName || displayUser.name || ""); }} className="text-gray-400 hover:text-blue-600 transition">
-                        <Edit2 size={15} />
-                      </button>
-                      {saved && <CheckCircle size={15} className="text-green-500" />}
-                    </div>
-                  )}
-                  <p className="text-gray-500 text-sm mt-1">{displayUser.email}</p>
-                  <span className={`mt-2 inline-block text-xs font-bold px-3 py-1 rounded-full ${displayUser.role === "admin" ? "bg-purple-50 text-purple-700" : "bg-blue-50 text-blue-700"}`}>
-                    {displayUser.role?.toUpperCase() || "USER"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Info grid */}
-              <div className="grid sm:grid-cols-2 gap-5">
-                {[
-                  { icon: <Mail size={18} />, label: "Email Address", value: displayUser.email },
-                  { icon: <Shield size={18} />, label: "Account Status", value: displayUser.isActive !== false ? "Active" : "Inactive", valueClass: displayUser.isActive !== false ? "text-green-600" : "text-red-600" },
-                  { icon: <Calendar size={18} />, label: "Member Since", value: displayUser.createdAt ? new Date(displayUser.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "—" },
-                  { icon: <User size={18} />, label: "Account Role", value: displayUser.role || "user" },
-                ].map(({ icon, label, value, valueClass }) => (
-                  <div key={label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4">
-                    <div className="bg-blue-50 text-blue-600 rounded-xl w-10 h-10 flex items-center justify-center shrink-0">{icon}</div>
-                    <div>
-                      <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{label}</p>
-                      <p className={`font-bold text-gray-900 mt-0.5 capitalize ${valueClass || ""}`}>{value}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Quick actions */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <h3 className="font-black text-gray-900 mb-4">Quick Actions</h3>
-                <div className="grid sm:grid-cols-3 gap-3">
-                  <Link to="/orders" className="flex items-center gap-3 p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition group">
-                    <Package size={20} className="text-gray-400 group-hover:text-blue-600" />
-                    <span className="font-semibold text-gray-700 group-hover:text-blue-700 text-sm">Order History</span>
-                  </Link>
-                  <Link to="/favourites" className="flex items-center gap-3 p-4 rounded-xl border border-gray-100 hover:border-red-200 hover:bg-red-50 transition group">
-                    <Heart size={20} className="text-gray-400 group-hover:text-red-600" />
-                    <span className="font-semibold text-gray-700 group-hover:text-red-700 text-sm">Favourites</span>
-                  </Link>
-                  <Link to="/cart" className="flex items-center gap-3 p-4 rounded-xl border border-gray-100 hover:border-green-200 hover:bg-green-50 transition group">
-                    <ShoppingCart size={20} className="text-gray-400 group-hover:text-green-600" />
-                    <span className="font-semibold text-gray-700 group-hover:text-green-700 text-sm">My Cart</span>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Logout */}
-              <button
-                onClick={logout}
-                className="w-full flex items-center justify-center gap-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-2xl py-4 font-bold transition"
-              >
-                <LogOut size={18} /> Sign Out
-              </button>
-            </div>
-          )}
+    <div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Personal information, account overview, orders, and wishlist.
+          </p>
         </div>
-      </Container>
-    </main>
+
+        {error && (
+          <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded-lg">
+            {successMessage}
+          </div>
+        )}
+
+        {displayUser ? (
+          <>
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 className="text-xl font-semibold mb-4">
+                  Personal Information
+                </h2>
+                <div className="space-y-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 text-sm">Name</p>
+                    <p className="text-lg font-semibold">
+                      {displayUser.name || 'Not set'}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 text-sm">Email</p>
+                    <p className="text-lg font-semibold">
+                      {displayUser.email || displayUser._id}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-gray-600 text-sm">Account Type</p>
+                    <p className="text-lg font-semibold capitalize">
+                      {displayUser.accountType || 'customer'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h2 className="text-xl font-semibold mb-4">Account Overview</h2>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <p className="text-xs text-blue-700 uppercase">
+                      Total Orders
+                    </p>
+                    <p className="text-2xl font-bold text-blue-900">
+                      {accountOverview?.totalOrders || 0}
+                    </p>
+                  </div>
+                  <div className="bg-indigo-50 rounded-lg p-4">
+                    <p className="text-xs text-indigo-700 uppercase">
+                      Wishlist
+                    </p>
+                    <p className="text-2xl font-bold text-indigo-900">
+                      {accountOverview?.wishlistCount || 0}
+                    </p>
+                  </div>
+                  <div className="bg-amber-50 rounded-lg p-4">
+                    <p className="text-xs text-amber-700 uppercase">Pending</p>
+                    <p className="text-2xl font-bold text-amber-900">
+                      {accountOverview?.pendingOrders || 0}
+                    </p>
+                  </div>
+                  <div className="bg-emerald-50 rounded-lg p-4">
+                    <p className="text-xs text-emerald-700 uppercase">
+                      Delivered
+                    </p>
+                    <p className="text-2xl font-bold text-emerald-900">
+                      {accountOverview?.deliveredOrders || 0}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-600 text-sm">Account Health</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {accountOverview?.accountHealth || 'Good'}
+                  </p>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {quickLinks.map((linkItem) => (
+                    <Link
+                      key={linkItem.path}
+                      to={linkItem.path}
+                      className="px-3 py-2 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700"
+                    >
+                      {linkItem.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-xl font-semibold mb-4">Order History</h2>
+              {orders.length === 0 ? (
+                <p className="text-gray-600">No orders yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {orders.map((order) => (
+                    <div
+                      key={order._id}
+                      className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {order.orderNumber}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(order.createdAt).toLocaleString()}
+                        </p>
+                        <p className="text-sm mt-1">
+                          Total:{' '}
+                          <span className="font-semibold">
+                            ${order.total?.toFixed?.(2) || order.total}
+                          </span>
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
+                            order.status === 'delivered'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : order.status === 'shipped'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-amber-100 text-amber-700'
+                          }`}
+                        >
+                          {order.status}
+                        </span>
+
+                        <button
+                          onClick={() => handleReorder(order._id)}
+                          className="px-3 py-1.5 text-xs font-semibold bg-gray-900 text-white rounded-lg hover:bg-black"
+                        >
+                          Reorder
+                        </button>
+
+                        <span className="text-xs text-gray-500">
+                          Track: {order.trackingNumber || 'Not available'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-xl font-semibold mb-4">
+                Wishlist / Save for Later
+              </h2>
+              {wishlist.length === 0 ? (
+                <p className="text-gray-600">Wishlist is empty.</p>
+              ) : (
+                <div className="space-y-3">
+                  {wishlist.map((item) => (
+                    <div
+                      key={item.productId}
+                      className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-14 h-14 rounded object-cover border border-gray-100"
+                        />
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {item.name}
+                          </p>
+                          <p className="text-sm text-gray-500">{item.brand}</p>
+                          <p className="text-sm font-semibold text-gray-800">
+                            ${item.price}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() =>
+                            handleMoveWishlistToCart(item.productId)
+                          }
+                          className="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          Move to Cart
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleRemoveWishlistItem(item.productId)
+                          }
+                          className="px-3 py-1.5 text-xs font-semibold bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        ) : (
+          <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+            <p className="text-center text-gray-600">No user data available</p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 
