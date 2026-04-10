@@ -6,7 +6,7 @@ import React, {
   useEffect,
   useContext,
 } from "react";
-import { cartAPI, orderAPI } from "../utils/api";
+import { cartAPI } from "../utils/api";
 import { useAuth } from "./AuthContext";
 
 export const CartContext = createContext();
@@ -128,12 +128,12 @@ export const CartProvider = ({ children }) => {
     }
   }, []);
 
-  // Checkout — accepts optional payload (promoCode, shippingAddress, etc.)
-  const checkout = useCallback(async (payload = {}) => {
+  // Checkout
+  const checkout = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const order = await orderAPI.placeOrder(payload);
+      const order = await cartAPI.checkout();
       setCart({ items: [], itemCount: 0, subtotal: 0 });
       setIsCartOpen(false);
       return order;

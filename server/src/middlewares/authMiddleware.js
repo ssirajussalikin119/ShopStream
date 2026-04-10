@@ -1,28 +1,28 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
-const asyncHandler = require("../utils/asyncHandler");
-const sendResponse = require("../utils/sendResponse");
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const asyncHandler = require('../utils/asyncHandler');
+const sendResponse = require('../utils/sendResponse');
 
 // This middleware verifies JWT token and attaches the authenticated user to req.user.
 const protect = asyncHandler(async (req, res, next) => {
-  const authHeader = req.headers.authorization || "";
+  const authHeader = req.headers.authorization || '';
 
-  if (!authHeader.startsWith("Bearer ")) {
-    return sendResponse(res, 401, false, "Not authorized, token is missing");
+  if (!authHeader.startsWith('Bearer ')) {
+    return sendResponse(res, 401, false, 'Not authorized, token is missing');
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await User.findById(decoded.id).select("-password");
+    const user = await User.findById(decoded.id).select('-password');
     if (!user) {
-      return sendResponse(res, 401, false, "Not authorized, user not found");
+      return sendResponse(res, 401, false, 'Not authorized, user not found');
     }
 
     if (!user.isActive) {
-      return sendResponse(res, 403, false, "Account is inactive");
+      return sendResponse(res, 403, false, 'Account is inactive');
     }
 
     req.user = user;
@@ -32,7 +32,7 @@ const protect = asyncHandler(async (req, res, next) => {
       res,
       401,
       false,
-      "Not authorized, token is invalid or expired",
+      'Not authorized, token is invalid or expired'
     );
   }
 });
@@ -45,16 +45,26 @@ const authorizeRoles = (...allowedRoles) => {
         res,
         401,
         false,
-        "Not authorized, user context missing",
+        'Not authorized, user context missing'
       );
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    const userRoles = Array.isArray(req.user.roles)
+      ? req.user.roles
+      : req.user.role
+        ? [req.user.role]
+        : [];
+
+    const hasAllowedRole = userRoles.some((role) =>
+      allowedRoles.includes(role)
+    );
+
+    if (!hasAllowedRole) {
       return sendResponse(
         res,
         403,
         false,
-        "Forbidden, insufficient permissions",
+        'Forbidden, insufficient permissions'
       );
     }
 
