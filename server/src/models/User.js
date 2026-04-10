@@ -1,34 +1,60 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const ROLES = require("../constants/roles");
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const ROLES = require('../constants/roles');
+
+const ACCOUNT_TYPES = ['customer', 'seller', 'both'];
 
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Name is required"],
+      required: [true, 'Name is required'],
       trim: true,
     },
     email: {
       type: String,
-      required: [true, "Email is required"],
+      required: [true, 'Email is required'],
       unique: true,
       lowercase: true,
       trim: true,
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
-      minlength: [6, "Password must be at least 6 characters"],
+      required: [true, 'Password is required'],
+      minlength: [6, 'Password must be at least 6 characters'],
     },
     role: {
       type: String,
       enum: [ROLES.USER, ROLES.SELLER, ROLES.ADMIN],
       default: ROLES.USER,
     },
+    roles: {
+      type: [
+        {
+          type: String,
+          enum: [ROLES.USER, ROLES.SELLER, ROLES.ADMIN],
+        },
+      ],
+      default: [ROLES.USER],
+    },
+    accountType: {
+      type: String,
+      enum: ACCOUNT_TYPES,
+      default: 'customer',
+    },
+    shopName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    shopLogo: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     avatar: {
       type: String,
-      default: "",
+      default: '',
     },
     isActive: {
       type: Boolean,
@@ -37,12 +63,12 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 // Hash password before saving to database
-userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password, 12);
 });
 
@@ -51,6 +77,6 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.model('User', userSchema);
 
 module.exports = User;
