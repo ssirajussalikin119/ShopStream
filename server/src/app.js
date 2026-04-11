@@ -8,6 +8,7 @@ const orderRoutes = require('./routes/orderRoutes');
 const ordersRoutes = require('./routes/ordersRoutes');
 const offerRoutes = require('./routes/offerRoutes');
 const newsletterRoutes = require('./routes/newsletterRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const sellerRoutes = require('./routes/sellerRoutes');
@@ -30,6 +31,7 @@ app.use('/api/orders', orderRoutes);      // Cart checkout + order history (old)
 app.use('/api/orders', ordersRoutes);     // Reorder (new controller)
 app.use('/api/offers', offerRoutes);
 app.use('/api/newsletter', newsletterRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/seller', sellerRoutes);
