@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import Container from "../layout/Container/Container";
 
 const images = [
@@ -10,12 +11,10 @@ const images = [
 const Hero = () => {
   const [current, setCurrent] = useState(0);
 
-  // Auto slide every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % images.length);
     }, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -33,12 +32,20 @@ const Hero = () => {
             recommendations tailored for you.
           </p>
           <div className="flex gap-4">
-            <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition">
+            {/* Fixed: was a dead <button>, now navigates to /category/electronics */}
+            <Link
+              to="/category/electronics"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+            >
               Shop Now
-            </button>
-            <button className="bg-white text-blue-600 border border-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition">
-              Learn More
-            </button>
+            </Link>
+            {/* Fixed: was a dead <button>, now navigates to /deals */}
+            <Link
+              to="/deals"
+              className="bg-white text-blue-600 border border-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition"
+            >
+              View Deals
+            </Link>
           </div>
         </div>
 
@@ -54,6 +61,18 @@ const Hero = () => {
               }`}
             />
           ))}
+          {/* Dot indicators */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-1.5">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  i === current ? "bg-white scale-125" : "bg-white/50"
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </Container>
     </section>

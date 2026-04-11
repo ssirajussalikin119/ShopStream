@@ -95,6 +95,28 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    tags: {
+      type: [String],
+      default: [],
+    },
+    specifications: {
+      type: Map,
+      of: String,
+      default: {},
+    },
+    features: {
+      type: [String],
+      default: [],
+    },
+    reviews: [
+      {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        userName: { type: String, default: 'Anonymous' },
+        rating: { type: Number, required: true, min: 1, max: 5 },
+        comment: { type: String, default: '' },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

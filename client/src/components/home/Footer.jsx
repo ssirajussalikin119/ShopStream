@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import Container from "../layout/Container/Container";
 
 const Footer = () => {
@@ -16,23 +17,41 @@ const Footer = () => {
             </p>
           </div>
 
+          {/* Fixed: Quick Links were plain <li> text, now proper <Link> elements */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-3 text-gray-400">
-              <li className="hover:text-white cursor-pointer transition">Home</li>
-              <li className="hover:text-white cursor-pointer transition">Shop</li>
-              <li className="hover:text-white cursor-pointer transition">Deals</li>
-              <li className="hover:text-white cursor-pointer transition">Contact</li>
+              <li>
+                <Link to="/" className="hover:text-white transition">Home</Link>
+              </li>
+              <li>
+                <Link to="/category/electronics" className="hover:text-white transition">Shop</Link>
+              </li>
+              <li>
+                <Link to="/deals" className="hover:text-white transition">Deals</Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-white transition">Contact</Link>
+              </li>
             </ul>
           </div>
 
+          {/* Fixed: Category links were plain <li> text, now proper <Link> elements */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Categories</h3>
             <ul className="space-y-3 text-gray-400">
-              <li className="hover:text-white cursor-pointer transition">Electronics</li>
-              <li className="hover:text-white cursor-pointer transition">Fashion</li>
-              <li className="hover:text-white cursor-pointer transition">Home Decor</li>
-              <li className="hover:text-white cursor-pointer transition">Gadgets</li>
+              <li>
+                <Link to="/category/electronics" className="hover:text-white transition">Electronics</Link>
+              </li>
+              <li>
+                <Link to="/category/fashion" className="hover:text-white transition">Fashion</Link>
+              </li>
+              <li>
+                <Link to="/category/home-decor" className="hover:text-white transition">Home Decor</Link>
+              </li>
+              <li>
+                <Link to="/category/gadgets" className="hover:text-white transition">Gadgets</Link>
+              </li>
             </ul>
           </div>
 

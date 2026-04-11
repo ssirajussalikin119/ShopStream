@@ -207,4 +207,46 @@ const getProductsByIds = asyncHandler(async (req, res) => {
   return sendResponse(res, 200, true, 'Products fetched', products);
 });
 
-module.exports = { getFeaturedProducts, getProducts, searchProducts, getProductById, getProductsByIds };
+const getProductReviews = asyncHandler(async (req, res) => {
+  const product = await Product.findById(req.params.id).select('reviews rating reviewCount').lean();
+  if (!product) {
+    res.status(404);
+    throw new Error('Product not found');
+  }
+  return sendResponse(res, 200, true, 'Reviews fetched successfully', product.reviews || []);
+});
+
+const addProductReview = asyncHandler(async (req, res) => {
+  const { rating, comment } = req.body;
+  if (!rating || rating < 1 || rating > 5) {
+    res.status(400);
+    throw new Error('Rating must be between 1 and 5');
+  }
+
+  const product = await Product.findById(req.params.id);
+  if (!product) {
+    res.status(404);
+    throw new Error('Product not found');
+  }
+
+  const review = {
+    userId: req.user?._id || null,
+    userName: req.user?.name || 'Anonymous',
+    rating: Number(rating),
+    comment: comment || '',
+    createdAt: new Date(),
+  };
+
+  product.reviews.push(review);
+
+  // Recalculate rating average
+  const total = product.reviews.reduce((sum, r) => sum + r.rating, 0);
+  product.rating = parseFloat((total / product.reviews.length).toFixed(1));
+  product.reviewCount = product.reviews.length;
+
+  await product.save();
+
+  return sendResponse(res, 201, true, 'Review added successfully', review);
+});
+
+module.exports = { getFeaturedProducts, getProducts, searchProducts, getProductById, getProductsByIds, getProductReviews, addProductReview };

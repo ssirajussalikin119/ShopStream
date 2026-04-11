@@ -54,11 +54,20 @@ export const productAPI = {
   },
   getById: async (id) => {
     const response = await api.get(`/products/${id}`);
+    // response is already { success, message, data } — data holds { product, related }
     return response.data || { product: null, related: [] };
   },
   search: async (query) => {
     const response = await api.get('/products/search', { params: { q: query } });
     return response.data || [];
+  },
+  getReviews: async (id) => {
+    const response = await api.get(`/products/${id}/reviews`);
+    return response.data || [];
+  },
+  addReview: async (id, payload) => {
+    const response = await api.post(`/products/${id}/reviews`, payload);
+    return response.data;
   },
 };
 
