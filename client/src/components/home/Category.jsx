@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import Container from "../layout/Container/Container";
 import { shopCategories } from "../../data/catalogData";
 
@@ -14,16 +15,22 @@ const Category = () => {
             <p className="text-gray-500">Explore our curated collections</p>
           </div>
 
-          <button className="text-blue-600 font-semibold hover:text-blue-700 transition cursor-pointer">
+          {/* Fixed: was a dead <button>, now navigates to first category */}
+          <Link
+            to="/category/electronics"
+            className="text-blue-600 font-semibold hover:text-blue-700 transition cursor-pointer"
+          >
             Browse all →
-          </button>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {shopCategories.map((category) => (
-            <div
+            // Fixed: was a dead <div>, now navigates to /category/:slug
+            <Link
               key={category.id}
-              className="relative h-56 rounded-2xl overflow-hidden group cursor-pointer border border-gray-100 shadow-sm"
+              to={`/category/${category.slug}`}
+              className="relative h-56 rounded-2xl overflow-hidden group border border-gray-100 shadow-sm block"
             >
               <img
                 src={category.image}
@@ -41,7 +48,7 @@ const Category = () => {
                   {category.description}
                 </p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </Container>

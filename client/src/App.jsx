@@ -55,6 +55,7 @@ const App = () => {
             }
           />
           <Route
+            path="/orders"
             element={
               <ProtectedRoute>
                 <OrderHistory />
