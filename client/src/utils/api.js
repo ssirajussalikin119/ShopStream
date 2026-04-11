@@ -125,6 +125,10 @@ export const newsletterAPI = {
   subscribe: (email) => api.post('/newsletter/subscribe', { email }),
 };
 
+export const aiAPI = {
+  sendMessage: (message) => api.post('/ai/chat', { message }),
+};
+
 export const profileAPI = {
   getDashboard: () => api.get('/profile/dashboard'),
 };

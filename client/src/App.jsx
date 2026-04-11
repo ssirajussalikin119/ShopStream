@@ -12,6 +12,7 @@ import SearchPage from "./pages/SearchPage";
 import SearchResults from "./pages/SearchResults";
 import FavouritesPage from "./pages/FavouritesPage";
 import DealsPage from "./pages/DealsPage";
+import FloatingAIChat from "./components/FloatingAIChat";
 import ProductDetail from "./pages/ProductDetail";
 import OrderHistory from "./pages/OrderHistory";
 import SellerDashboard from "./pages/SellerDashboard";
@@ -63,6 +64,7 @@ const App = () => {
             }
           />
         </Routes>
+        <FloatingAIChat />
       </CartProvider>
     </AuthProvider>
   );
