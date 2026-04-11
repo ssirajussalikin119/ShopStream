@@ -13,10 +13,10 @@ const getOrders = asyncHandler(async (req, res) => {
   return sendResponse(res, 200, true, "Orders fetched successfully", orders);
 });
 
-// GET /api/orders/:orderId — get a single order
+// GET /api/orders/:orderId — get a single order by orderNumber
 const getOrder = asyncHandler(async (req, res) => {
   const order = await Order.findOne({
-    orderId: req.params.orderId,
+    orderNumber: req.params.orderId,
     user: req.user._id,
   }).lean();
 
@@ -28,7 +28,7 @@ const getOrder = asyncHandler(async (req, res) => {
   return sendResponse(res, 200, true, "Order fetched successfully", order);
 });
 
-// POST /api/orders/checkout — place order from cart
+// POST /api/orders/checkout — place order from cart with optional promo code
 const placeOrder = asyncHandler(async (req, res) => {
   const { promoCode, shippingAddress, paymentMethod = "card" } = req.body;
 
@@ -42,7 +42,6 @@ const placeOrder = asyncHandler(async (req, res) => {
   const subtotal = cart.subtotal;
   let discount = 0;
 
-  // Apply promo code if provided
   if (promoCode) {
     const now = new Date();
     const offer = await Offer.findOne({ code: promoCode.toUpperCase() });
@@ -54,7 +53,6 @@ const placeOrder = asyncHandler(async (req, res) => {
         } else {
           discount = Math.min(offer.discountValue, subtotal);
         }
-        // Increment usage
         await Offer.findByIdAndUpdate(offer._id, { $inc: { usedCount: 1 } });
       }
     }
@@ -63,11 +61,12 @@ const placeOrder = asyncHandler(async (req, res) => {
   const tax = +((subtotal - discount) * 0.08).toFixed(2);
   const total = +(subtotal - discount + tax).toFixed(2);
 
-  const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+  // Use orderNumber (required field in Order model)
+  const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
   const order = await Order.create({
     user: req.user._id,
-    orderId,
+    orderNumber,
     items: cart.items,
     subtotal,
     tax,
@@ -76,13 +75,25 @@ const placeOrder = asyncHandler(async (req, res) => {
     promoCode: promoCode || null,
     shippingAddress,
     paymentMethod,
+    trackingNumber: `TRK-${Date.now()}`,
   });
 
-  // Clear cart after checkout
   cart.items = [];
   await cart.save();
 
-  return sendResponse(res, 201, true, "Order placed successfully", order);
+  return sendResponse(res, 201, true, "Order placed successfully", {
+    _id: order._id,
+    orderId: order.orderNumber,        // Cart.jsx uses order.orderId
+    orderNumber: order.orderNumber,
+    status: order.status,
+    items: order.items,
+    subtotal: order.subtotal,
+    tax: order.tax,
+    discount: order.discount || 0,
+    total: order.total,
+    trackingNumber: order.trackingNumber,
+    placedAt: order.createdAt,
+  });
 });
 
 module.exports = { getOrders, getOrder, placeOrder };

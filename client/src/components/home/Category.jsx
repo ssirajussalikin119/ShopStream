@@ -15,7 +15,7 @@ const Category = () => {
           </div>
 
           <button className="text-blue-600 font-semibold hover:text-blue-700 transition cursor-pointer">
-            Browse all ->
+            Browse all →
           </button>
         </div>
 
