@@ -166,4 +166,45 @@ const searchProducts = asyncHandler(async (req, res) => {
   );
 });
 
-module.exports = { getFeaturedProducts, getProducts, searchProducts };
+
+const getProductById = asyncHandler(async (req, res) => {
+  const product = await Product.findOne({
+    _id: req.params.id,
+    ...PUBLIC_PRODUCT_QUERY,
+  }).lean();
+
+  if (!product) {
+    res.status(404);
+    throw new Error('Product not found');
+  }
+
+  // Fetch related products (same category, excluding this product)
+  const related = await Product.find({
+    categorySlug: product.categorySlug,
+    _id: { $ne: product._id },
+    ...PUBLIC_PRODUCT_QUERY,
+  })
+    .limit(4)
+    .lean();
+
+  return sendResponse(res, 200, true, 'Product fetched successfully', {
+    product,
+    related,
+  });
+});
+
+
+const getProductsByIds = asyncHandler(async (req, res) => {
+  const { ids } = req.query; // comma-separated product IDs
+  if (!ids) {
+    return sendResponse(res, 200, true, 'Products fetched', []);
+  }
+  const idList = ids.split(',').filter(Boolean);
+  const products = await Product.find({
+    _id: { $in: idList },
+    ...PUBLIC_PRODUCT_QUERY,
+  }).lean();
+  return sendResponse(res, 200, true, 'Products fetched', products);
+});
+
+module.exports = { getFeaturedProducts, getProducts, searchProducts, getProductById, getProductsByIds };

@@ -16,23 +16,10 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Return response.data so callers get { success, message, data } directly
 api.interceptors.response.use(
-  (response) => {
-    console.log(
-      '[API Interceptor] Response success:',
-      response.config.url,
-      response.status,
-      response.data
-    );
-    return response.data;
-  },
+  (response) => response.data,
   (error) => {
-    console.error(
-      '[API Interceptor] Response error:',
-      error.config?.url,
-      error.response?.status,
-      error.response?.data
-    );
     if (error.response?.status === 401) {
       localStorage.removeItem('authToken');
       localStorage.removeItem('authUser');
@@ -45,12 +32,7 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (email, password, accountType = 'customer') => {
     const fallbackName = email?.split('@')[0]?.trim() || 'User';
-    return api.post('/auth/register', {
-      name: fallbackName,
-      email,
-      password,
-      accountType,
-    });
+    return api.post('/auth/register', { name: fallbackName, email, password, accountType });
   },
   login: (email, password) => api.post('/auth/login', { email, password }),
   getMe: () => api.get('/auth/me'),
@@ -65,10 +47,17 @@ export const productAPI = {
     const response = await api.get('/products', { params });
     return response.data || { products: [], filters: {} };
   },
+  getByIds: async (ids = []) => {
+    if (!ids.length) return [];
+    const response = await api.get('/products/by-ids', { params: { ids: ids.join(',') } });
+    return response.data || [];
+  },
+  getById: async (id) => {
+    const response = await api.get(`/products/${id}`);
+    return response.data || { product: null, related: [] };
+  },
   search: async (query) => {
-    const response = await api.get('/products/search', {
-      params: { q: query },
-    });
+    const response = await api.get('/products/search', { params: { q: query } });
     return response.data || [];
   },
 };
@@ -94,16 +83,44 @@ export const cartAPI = {
     const response = await api.delete('/cart');
     return response.data;
   },
-  checkout: async () => {
-    const response = await api.post('/cart/checkout');
+};
+
+// Used by CartContext checkout()
+export const orderAPI = {
+  placeOrder: async (payload) => {
+    const response = await api.post('/orders/checkout', payload);
     return response.data;
   },
+  getOrders: async () => {
+    const response = await api.get('/orders');
+    return response.data || [];
+  },
+  getOrder: async (orderId) => {
+    const response = await api.get(`/orders/${orderId}`);
+    return response.data;
+  },
+};
+
+export const offerAPI = {
+  getOffers: async (params) => {
+    const response = await api.get('/offers', { params });
+    return response.data || [];
+  },
+  validateCode: async (code) => {
+    const response = await api.get(`/offers/validate/${code}`);
+    return response.data;
+  },
+};
+
+export const newsletterAPI = {
+  subscribe: (email) => api.post('/newsletter/subscribe', { email }),
 };
 
 export const profileAPI = {
   getDashboard: () => api.get('/profile/dashboard'),
 };
 
+// ordersAPI: used by Profile.jsx for order list + reorder
 export const ordersAPI = {
   getMyOrders: () => api.get('/orders'),
   reorder: (orderId) => api.post(`/orders/${orderId}/reorder`),
@@ -120,11 +137,9 @@ export const sellerAPI = {
   updateProfile: (payload) => api.put('/seller/profile', payload),
   getProducts: () => api.get('/seller/products'),
   addProduct: (payload) => api.post('/seller/products', payload),
-  updateProduct: (productId, payload) =>
-    api.put(`/seller/products/${productId}`, payload),
+  updateProduct: (productId, payload) => api.put(`/seller/products/${productId}`, payload),
   deleteProduct: (productId) => api.delete(`/seller/products/${productId}`),
-  toggleStatus: (productId) =>
-    api.patch(`/seller/products/${productId}/status`),
+  toggleStatus: (productId) => api.patch(`/seller/products/${productId}/status`),
 };
 
 export default api;

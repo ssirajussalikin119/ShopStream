@@ -81,12 +81,12 @@ const Navbar = () => {
               </div>
             </Dropdown>
 
-            <a
-              href="#"
+            <Link
+              to="/deals"
               className="rounded-full bg-red-50 px-3 py-1.5 text-red-600 hover:bg-red-100 transition-colors"
             >
               Deals
-            </a>
+            </Link>
             <form
               onSubmit={handleSearchSubmit}
               className="flex items-center gap-2"
@@ -114,9 +114,14 @@ const Navbar = () => {
 
           {/* Right Icons */}
           <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-            <button className="p-2 hover:bg-gray-100 rounded-full hidden sm:flex">
+            <Link
+              to="/favourites"
+              className="p-2 hover:bg-gray-100 rounded-full hidden sm:flex"
+              onClick={() => setMobileOpen(false)}
+              aria-label="View favourites"
+            >
               <Heart size={22} />
-            </button>
+            </Link>
 
             {/* Cart button */}
             <button
@@ -236,9 +241,22 @@ const Navbar = () => {
                 </details>
               </li>
               <li>
-                <a href="#" className="block font-medium text-lg text-red-600">
+                <Link
+                  to="/deals"
+                  className="block font-medium text-lg text-red-600"
+                  onClick={() => setMobileOpen(false)}
+                >
                   Deals
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/favourites"
+                  className="block font-medium text-lg"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Favourites
+                </Link>
               </li>
               <li>
                 <button

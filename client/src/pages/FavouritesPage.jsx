@@ -18,11 +18,13 @@ const FavouritesPage = () => {
     const ids = saved ? JSON.parse(saved) : [];
     setFavouriteIds(ids);
 
-    productAPI.getByCategory({})
-      .then((res) => {
-        const all = res.products || [];
-        setProducts(all.filter((p) => ids.includes(p._id)));
-      })
+    if (ids.length === 0) {
+      setLoading(false);
+      return;
+    }
+
+    productAPI.getByIds(ids)
+      .then((list) => setProducts(list))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -42,7 +44,7 @@ const FavouritesPage = () => {
 
         {loading && (
           <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {[1,2,3].map((i) => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="bg-white rounded-2xl shadow p-4 animate-pulse">
                 <div className="w-full h-48 bg-gray-200 rounded-lg mb-3" />
                 <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
