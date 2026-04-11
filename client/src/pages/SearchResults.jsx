@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import Container from '../components/layout/Container/Container';
 import AddToCartButton from '../components/cart/AddToCartButton';
@@ -22,43 +22,26 @@ const SearchResults = () => {
 
   useEffect(() => {
     let mounted = true;
-
     const runSearch = async () => {
       if (!query) {
-        if (mounted) {
-          setProducts([]);
-          setLoading(false);
-          setError('');
-        }
+        if (mounted) { setProducts([]); setLoading(false); setError(''); }
         return;
       }
-
       setLoading(true);
       setError('');
-
       try {
         const result = await productAPI.search(query);
-        if (!mounted) {
-          return;
-        }
+        if (!mounted) return;
         setProducts(Array.isArray(result) ? result : []);
       } catch (apiError) {
-        if (!mounted) {
-          return;
-        }
+        if (!mounted) return;
         setError(apiError?.message || 'Unable to fetch search results.');
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     };
-
     runSearch();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [query]);
 
   return (
@@ -77,18 +60,13 @@ const SearchResults = () => {
         </section>
 
         {error ? (
-          <div className="rounded-3xl border border-red-100 bg-red-50 px-5 py-4 text-sm text-red-700">
-            {error}
-          </div>
+          <div className="rounded-3xl border border-red-100 bg-red-50 px-5 py-4 text-sm text-red-700">{error}</div>
         ) : null}
 
         {loading ? (
           <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((item) => (
-              <div
-                key={item}
-                className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm"
-              >
+              <div key={item} className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
                 <div className="aspect-[4/3] animate-pulse bg-gray-200" />
                 <div className="space-y-3 p-5">
                   <div className="h-3 w-1/3 animate-pulse rounded bg-gray-200" />
@@ -108,28 +86,31 @@ const SearchResults = () => {
 
         {!loading && !error && query && products.length === 0 ? (
           <div className="rounded-3xl border border-gray-100 bg-white px-6 py-10 text-center shadow-sm">
-            <h3 className="text-xl font-bold text-gray-900">
-              No results found
-            </h3>
-            <p className="mt-2 text-gray-500">
-              Try a different product name, brand, or category keyword.
-            </p>
+            <h3 className="text-xl font-bold text-gray-900">No results found</h3>
+            <p className="mt-2 text-gray-500">Try a different product name, brand, or category keyword.</p>
           </div>
         ) : null}
 
         {!loading && !error && products.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {products.map((product) => (
-              <article
+              // Fixed: entire card is now wrapped in a Link
+              <Link
                 key={product._id}
-                className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg"
+                to={`/product/${product._id}`}
+                className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg block group"
               >
                 <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
+                  {product.compareAtPrice > product.price && (
+                    <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-black px-2.5 py-1 rounded-full">
+                      -{Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}% OFF
+                    </span>
+                  )}
                 </div>
 
                 <div className="space-y-3 p-5">
@@ -137,7 +118,7 @@ const SearchResults = () => {
                     {product.brand || 'Brand'}
                   </p>
 
-                  <h3 className="text-xl font-extrabold text-gray-900 line-clamp-2">
+                  <h3 className="text-xl font-extrabold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
                     {product.name}
                   </h3>
 
@@ -147,48 +128,33 @@ const SearchResults = () => {
 
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Star size={16} className="fill-amber-400 text-amber-400" />
-                    <span className="font-semibold text-gray-700">
-                      {(product.rating || 0).toFixed(1)}
-                    </span>
-                    <span>
-                      ({product.reviewCount || 0} review
-                      {Number(product.reviewCount || 0) === 1 ? '' : 's'})
-                    </span>
+                    <span className="font-semibold text-gray-700">{(product.rating || 0).toFixed(1)}</span>
+                    <span>({product.reviewCount || 0} review{Number(product.reviewCount || 0) === 1 ? '' : 's'})</span>
                   </div>
 
                   <div className="flex items-end justify-between gap-3">
                     <div>
-                      <p className="text-3xl font-black text-gray-900">
-                        {formatPrice(product.price)}
-                      </p>
+                      <p className="text-3xl font-black text-gray-900">{formatPrice(product.price)}</p>
                       {product.compareAtPrice ? (
-                        <p className="text-sm text-gray-400 line-through">
-                          {formatPrice(product.compareAtPrice)}
-                        </p>
+                        <p className="text-sm text-gray-400 line-through">{formatPrice(product.compareAtPrice)}</p>
                       ) : null}
                     </div>
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        product.inStock
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}
-                    >
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      product.inStock ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                    }`}>
                       {product.inStock ? 'In stock' : 'Out of stock'}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-2">
+                  {/* Prevent link navigation when clicking cart/wishlist buttons */}
+                  <div className="flex items-center gap-2 pt-2" onClick={(e) => e.preventDefault()}>
                     <div className="flex-1">
-                      <AddToCartButton
-                        productId={product._id}
-                        inStock={product.inStock}
-                      />
+                      <AddToCartButton productId={product._id} disabled={!product.inStock} />
                     </div>
                     <SaveForLaterButton productId={product._id} />
                   </div>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         ) : null}
