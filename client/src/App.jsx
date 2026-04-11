@@ -16,6 +16,9 @@ import FloatingAIChat from "./components/FloatingAIChat";
 import ProductDetail from "./pages/ProductDetail";
 import OrderHistory from "./pages/OrderHistory";
 import SellerDashboard from "./pages/SellerDashboard";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentFailed from "./pages/PaymentFailed";
+import PaymentCancelled from "./pages/PaymentCancelled";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import CartDrawer from "./components/cart/CartDrawer";
@@ -39,6 +42,9 @@ const App = () => {
           <Route path="/cart" element={<CartPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/payment-failed" element={<PaymentFailed />} />
+          <Route path="/payment-cancelled" element={<PaymentCancelled />} />
           <Route
             path="/profile"
             element={
