@@ -79,8 +79,8 @@ const PaymentModal = ({ isOpen, onClose, product }) => {
         country: "Bangladesh",
       });
 
-      if (response.success && response.data?.redirectUrl) {
-        window.location.href = response.data.redirectUrl;
+            if (response.success && response.data?.redirectUrl) {
+        window.open(response.data.redirectUrl, "_blank", "noopener,noreferrer");
         return;
       }
 
