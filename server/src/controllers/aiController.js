@@ -1,9 +1,11 @@
+require('dotenv').config();
 const OpenAI = require('openai');
 const sendResponse = require('../utils/sendResponse');
 
 const createOpenAIClient = () => {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey || !apiKey.trim()) {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    console.error('OpenAI API key is missing from server environment.');
     return null;
   }
 
