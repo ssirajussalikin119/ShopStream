@@ -3,13 +3,16 @@ const {
   getFeaturedProducts,
   getProducts,
   searchProducts,
+  getProductById,
+  getProductsByIds,
 } = require('../controllers/productController');
 
 const router = express.Router();
 
-// GET /api/products/featured - Fetch products for the home page
 router.get('/featured', getFeaturedProducts);
 router.get('/search', searchProducts);
+router.get('/by-ids', getProductsByIds);
 router.get('/', getProducts);
+router.get('/:id', getProductById);
 
 module.exports = router;

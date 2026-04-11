@@ -2,18 +2,14 @@ const mongoose = require('mongoose');
 
 const orderItemSchema = new mongoose.Schema(
   {
-    productId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Product',
-      required: true,
-    },
-    sku: { type: String, required: true },
-    name: { type: String, required: true },
-    image: { type: String, required: true },
-    brand: { type: String, required: true },
-    price: { type: Number, required: true },
+    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+    sku:       { type: String, required: true },
+    name:      { type: String, required: true },
+    image:     { type: String, required: true },
+    brand:     { type: String, required: true },
+    price:     { type: Number, required: true },
     compareAtPrice: { type: Number, default: null },
-    quantity: { type: Number, required: true, min: 1 },
+    quantity:  { type: Number, required: true, min: 1 },
   },
   { _id: false }
 );
@@ -32,31 +28,34 @@ const orderSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
-    items: {
-      type: [orderItemSchema],
-      default: [],
-    },
+    items:    { type: [orderItemSchema], default: [] },
     status: {
       type: String,
-      enum: ['pending', 'shipped', 'delivered', 'completed'],
+      enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'],
       default: 'pending',
       index: true,
     },
-    subtotal: { type: Number, required: true, min: 0 },
-    tax: { type: Number, required: true, min: 0 },
-    total: { type: Number, required: true, min: 0 },
-    trackingNumber: {
-      type: String,
-      default: '',
-    },
-    deliveredAt: {
-      type: Date,
-      default: null,
-    },
+    subtotal:       { type: Number, required: true, min: 0 },
+    discount:       { type: Number, default: 0, min: 0 },
+    tax:            { type: Number, required: true, min: 0 },
+    total:          { type: Number, required: true, min: 0 },
+    promoCode:      { type: String, default: null },
+    shippingAddress:{ type: Object, default: null },
+    paymentMethod:  { type: String, default: 'card' },
+    trackingNumber: { type: String, default: '' },
+    estimatedDelivery: { type: Date, default: null },
+    deliveredAt:    { type: Date, default: null },
   },
   { timestamps: true }
 );
 
-const Order = mongoose.model('Order', orderSchema);
+// Virtual: orderId alias for orderNumber (used in Cart.jsx success screen)
+orderSchema.virtual('orderId').get(function () {
+  return this.orderNumber;
+});
 
+orderSchema.set('toJSON', { virtuals: true });
+orderSchema.set('toObject', { virtuals: true });
+
+const Order = mongoose.model('Order', orderSchema);
 module.exports = Order;
