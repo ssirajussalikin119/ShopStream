@@ -1,32 +1,33 @@
-import React, { useEffect, useState } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
-import { ChevronDown, SlidersHorizontal, Star } from 'lucide-react';
-import Container from '../components/layout/Container/Container';
-import { shopCategories } from '../data/catalogData';
-import { productAPI } from '../utils/api';
-import AddToCartButton from '../components/cart/AddToCartButton';
-import SaveForLaterButton from '../components/wishlist/SaveForLaterButton';
+import React, { useEffect, useState } from "react";
+import { Navigate, useParams } from "react-router-dom";
+import { ChevronDown, SlidersHorizontal, Star } from "lucide-react";
+import Container from "../components/layout/Container/Container";
+import { shopCategories } from "../data/catalogData";
+import { productAPI } from "../utils/api";
+import AddToCartButton from "../components/cart/AddToCartButton";
+import SaveForLaterButton from "../components/wishlist/SaveForLaterButton";
+import PaymentModal from "../components/PaymentModal";
 
 const SORT_OPTIONS = [
-  { label: 'Featured', value: 'featured' },
-  { label: 'Newest', value: 'newest' },
-  { label: 'Price: Low to High', value: 'price_asc' },
-  { label: 'Price: High to Low', value: 'price_desc' },
-  { label: 'Top Rated', value: 'rating' },
+  { label: "Featured", value: "featured" },
+  { label: "Newest", value: "newest" },
+  { label: "Price: Low to High", value: "price_asc" },
+  { label: "Price: High to Low", value: "price_desc" },
+  { label: "Top Rated", value: "rating" },
 ];
 
 const PRICE_OPTIONS = [
-  { value: 'all', label: 'All prices' },
-  { value: 'under200', label: 'Under $200' },
-  { value: 'between200and500', label: '$200 - $500' },
-  { value: 'between500and1000', label: '$500 - $1,000' },
-  { value: 'above1000', label: '$1,000 & above' },
+  { value: "all", label: "All prices" },
+  { value: "under200", label: "Under $200" },
+  { value: "between200and500", label: "$200 - $500" },
+  { value: "between500and1000", label: "$500 - $1,000" },
+  { value: "above1000", label: "$1,000 & above" },
 ];
 
 const formatPrice = (price) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
     maximumFractionDigits: 2,
   }).format(price);
 
@@ -41,16 +42,20 @@ const CategoryPage = () => {
   });
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [selectedSubcategories, setSelectedSubcategories] = useState([]);
-  const [selectedPriceRange, setSelectedPriceRange] = useState('all');
-  const [sortBy, setSortBy] = useState('featured');
+  const [selectedPriceRange, setSelectedPriceRange] = useState("all");
+  const [sortBy, setSortBy] = useState("featured");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [paymentModal, setPaymentModal] = useState({
+    open: false,
+    product: null,
+  });
 
   useEffect(() => {
     setSelectedBrands([]);
     setSelectedSubcategories([]);
-    setSelectedPriceRange('all');
-    setSortBy('featured');
+    setSelectedPriceRange("all");
+    setSortBy("featured");
   }, [slug]);
 
   useEffect(() => {
@@ -76,10 +81,10 @@ const CategoryPage = () => {
           category: slug,
           sort: sortBy,
           ...(selectedBrands.length > 0
-            ? { brand: selectedBrands.join(',') }
+            ? { brand: selectedBrands.join(",") }
             : {}),
           ...(selectedSubcategories.length > 0
-            ? { subcategory: selectedSubcategories.join(',') }
+            ? { subcategory: selectedSubcategories.join(",") }
             : {}),
           ...pricePresetMap[selectedPriceRange],
         });
@@ -94,15 +99,15 @@ const CategoryPage = () => {
             brands: [],
             subcategories: [],
             priceRange: { minPrice: 0, maxPrice: 0 },
-          }
+          },
         );
-        setError('');
+        setError("");
       } catch (apiError) {
         if (!isMounted) {
           return;
         }
 
-        setError(apiError?.message || 'Unable to load category products.');
+        setError(apiError?.message || "Unable to load category products.");
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -152,8 +157,8 @@ const CategoryPage = () => {
                 onClick={() => {
                   setSelectedBrands([]);
                   setSelectedSubcategories([]);
-                  setSelectedPriceRange('all');
-                  setSortBy('featured');
+                  setSelectedPriceRange("all");
+                  setSortBy("featured");
                 }}
               >
                 Reset
@@ -181,7 +186,7 @@ const CategoryPage = () => {
                 ))}
               </div>
               <p className="mt-4 text-xs text-gray-500">
-                Available range: {formatPrice(filters.priceRange.minPrice || 0)}{' '}
+                Available range: {formatPrice(filters.priceRange.minPrice || 0)}{" "}
                 - {formatPrice(filters.priceRange.maxPrice || 0)}
               </p>
             </div>
@@ -203,7 +208,7 @@ const CategoryPage = () => {
                         toggleSelection(
                           brand,
                           selectedBrands,
-                          setSelectedBrands
+                          setSelectedBrands,
                         )
                       }
                     />
@@ -230,7 +235,7 @@ const CategoryPage = () => {
                         toggleSelection(
                           subcategory,
                           selectedSubcategories,
-                          setSelectedSubcategories
+                          setSelectedSubcategories,
                         )
                       }
                     />
@@ -246,7 +251,7 @@ const CategoryPage = () => {
               <div>
                 <p className="text-sm font-medium text-gray-500">
                   {loading
-                    ? 'Loading products...'
+                    ? "Loading products..."
                     : `${products.length} products found`}
                 </p>
                 <h2 className="text-2xl font-black text-gray-900">
@@ -328,7 +333,7 @@ const CategoryPage = () => {
                       {product.compareAtPrice &&
                       product.compareAtPrice > product.price ? (
                         <span className="absolute left-4 top-4 rounded-full bg-white px-3 py-1 text-xs font-bold text-red-600 shadow-sm">
-                          Save{' '}
+                          Save{" "}
                           {formatPrice(product.compareAtPrice - product.price)}
                         </span>
                       ) : null}
@@ -357,7 +362,7 @@ const CategoryPage = () => {
                           className="fill-yellow-400 text-yellow-400"
                         />
                         <span className="font-semibold text-gray-900">
-                          {product.rating?.toFixed(1) || '0.0'}
+                          {product.rating?.toFixed(1) || "0.0"}
                         </span>
                         <span>({product.reviewCount || 0} reviews)</span>
                       </div>
@@ -375,11 +380,11 @@ const CategoryPage = () => {
 
                       <div className="flex items-center justify-between gap-4">
                         <span
-                          className={`text-sm font-semibold ${product.inStock ? 'text-green-600' : 'text-red-600'}`}
+                          className={`text-sm font-semibold ${product.inStock ? "text-green-600" : "text-red-600"}`}
                         >
                           {product.inStock
                             ? `${product.stockCount} in stock`
-                            : 'Out of stock'}
+                            : "Out of stock"}
                         </span>
                         <div className="flex items-center gap-2">
                           <SaveForLaterButton productId={product._id} />
@@ -387,6 +392,14 @@ const CategoryPage = () => {
                             productId={product._id}
                             disabled={!product.inStock}
                           />
+                          <button
+                            onClick={() =>
+                              setPaymentModal({ open: true, product })
+                            }
+                            className="inline-flex items-center justify-center rounded-full font-bold transition-all duration-200 px-4 py-2 text-sm gap-1.5 bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
+                          >
+                            Buy Now
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -397,6 +410,11 @@ const CategoryPage = () => {
           </div>
         </section>
       </Container>
+      <PaymentModal
+        isOpen={paymentModal.open}
+        product={paymentModal.product}
+        onClose={() => setPaymentModal({ open: false, product: null })}
+      />
     </main>
   );
 };
