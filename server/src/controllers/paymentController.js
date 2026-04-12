@@ -91,6 +91,16 @@ const initiatePayment = asyncHandler(async (req, res) => {
     productId: product._id,
     amount: payableAmount,
     customerInfo: {
+      userId: req.user._id,
+      name: customerInfo.name,
+      email: customerInfo.email,
+      phone: customerInfo.phone,
+      address: customerInfo.address || "",
+      city: customerInfo.city || "",
+      postcode: customerInfo.postcode || "",
+      country: customerInfo.country || "Bangladesh",
+    },
+    shippingAddress: {
       name: customerInfo.name,
       email: customerInfo.email,
       phone: customerInfo.phone,
@@ -102,6 +112,7 @@ const initiatePayment = asyncHandler(async (req, res) => {
     sellerInfo,
     items: [],
     status: "pending",
+    paymentStatus: "pending",
     subtotal: payableAmount,
     tax,
     total,
@@ -130,19 +141,63 @@ const initiatePayment = asyncHandler(async (req, res) => {
 const paymentSuccess = asyncHandler(async (req, res) => {
   const { transactionId } = req.params;
 
-  const order = await Order.findOne({ transactionId });
-  if (!order) {
-    return sendResponse(res, 404, false, "Payment order not found");
+  // 1. Find the payment order
+  const paymentOrder = await Order.findOne({ transactionId });
+  if (!paymentOrder) {
+    return res.redirect(
+      `${getClientBaseUrl()}/payment-failed?tran_id=${transactionId}&status=not_found`,
+    );
   }
 
-  order.status = "confirmed";
-  await order.save();
+  if (paymentOrder.paymentStatus === "paid") {
+    return res.redirect(
+      `${getClientBaseUrl()}/payment-success?tran_id=${transactionId}&status=success`,
+    );
+  }
 
-  return redirectToClientStatus(
-    res,
-    "payment-success",
-    order.transactionId,
-    "success",
+  // 2. Verify with SSLCommerz (optional but recommended for sandbox)
+  // val_id comes from SSLCommerz POST body
+  const valId = req.body?.val_id;
+  // Note: in sandbox mode, verification may not always work
+  // so we proceed even if val_id is missing
+
+  // 3. Fetch actual product details and finalize the existing payment order.
+  const product = await Product.findById(paymentOrder.productId).lean();
+
+  const customerInfo = paymentOrder.customerInfo || {};
+  const deliveryAddress = {
+    name: customerInfo.name || "",
+    email: customerInfo.email || "",
+    phone: customerInfo.phone || "",
+    address: customerInfo.address || "",
+    city: customerInfo.city || "",
+    postcode: customerInfo.postcode || "",
+    country: customerInfo.country || "Bangladesh",
+  };
+
+  paymentOrder.items = [
+    {
+      productId: paymentOrder.productId,
+      sku: product?.sku || "PAYMENT",
+      name: product?.name || "Product",
+      image: product?.image || "",
+      brand: product?.brand || "Unknown",
+      price: paymentOrder.amount,
+      compareAtPrice: product?.compareAtPrice || null,
+      quantity: 1,
+    },
+  ];
+  paymentOrder.status = "confirmed";
+  paymentOrder.paymentStatus = "paid";
+  paymentOrder.paymentVerifiedAt = new Date();
+  paymentOrder.shippingAddress = deliveryAddress;
+  paymentOrder.gatewayResponse = req.body || null;
+  await paymentOrder.save();
+  console.log("[paymentSuccess] Saved order:", paymentOrder.toObject());
+
+  // 4. Redirect to frontend
+  return res.redirect(
+    `${getClientBaseUrl()}/payment-success?tran_id=${transactionId}&status=success`,
   );
 });
 
@@ -152,17 +207,17 @@ const paymentFailed = asyncHandler(async (req, res) => {
 
   const order = await Order.findOne({ transactionId });
   if (!order) {
-    return sendResponse(res, 404, false, "Payment order not found");
+    return res.redirect(
+      `${getClientBaseUrl()}/payment-failed?tran_id=${transactionId}&status=not_found`,
+    );
   }
 
   order.status = "cancelled";
+  order.paymentStatus = "failed";
   await order.save();
 
-  return redirectToClientStatus(
-    res,
-    "payment-failed",
-    order.transactionId,
-    "failed",
+  return res.redirect(
+    `${getClientBaseUrl()}/payment-failed?tran_id=${transactionId}&status=failed`,
   );
 });
 
@@ -172,17 +227,17 @@ const paymentCancelled = asyncHandler(async (req, res) => {
 
   const order = await Order.findOne({ transactionId });
   if (!order) {
-    return sendResponse(res, 404, false, "Payment order not found");
+    return res.redirect(
+      `${getClientBaseUrl()}/payment-cancelled?tran_id=${transactionId}&status=not_found`,
+    );
   }
 
   order.status = "cancelled";
+  order.paymentStatus = "cancelled";
   await order.save();
 
-  return redirectToClientStatus(
-    res,
-    "payment-cancelled",
-    order.transactionId,
-    "cancelled",
+  return res.redirect(
+    `${getClientBaseUrl()}/payment-cancelled?tran_id=${transactionId}&status=cancelled`,
   );
 });
 

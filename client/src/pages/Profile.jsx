@@ -1,27 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   authAPI,
   cartAPI,
   ordersAPI,
   profileAPI,
   wishlistAPI,
-} from '../utils/api';
+} from "../utils/api";
 
 const ProfilePage = () => {
   const { user, token } = useAuth();
   const isSellerAccount =
-    user?.role === 'seller' ||
-    user?.accountType === 'seller' ||
-    user?.accountType === 'both';
+    user?.role === "seller" ||
+    user?.accountType === "seller" ||
+    user?.accountType === "both";
   const [userData, setUserData] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [orders, setOrders] = useState([]);
   const [wishlist, setWishlist] = useState([]);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (isSellerAccount) {
@@ -32,7 +32,7 @@ const ProfilePage = () => {
     const fetchUserData = async () => {
       try {
         if (!token) {
-          setError('No authentication token found');
+          setError("No authentication token found");
           setLoading(false);
           return;
         }
@@ -65,7 +65,7 @@ const ProfilePage = () => {
           setWishlist(wishlistResponse.data?.items || []);
         }
       } catch (err) {
-        setError(err.message || 'An error occurred');
+        setError(err.message || "An error occurred");
       } finally {
         setLoading(false);
       }
@@ -109,27 +109,16 @@ const ProfilePage = () => {
   const accountOverview = dashboard?.accountOverview;
   const quickLinks = dashboard?.quickLinks || [];
 
-  const handleReorder = async (orderId) => {
-    try {
-      const response = await ordersAPI.reorder(orderId);
-      if (response.success) {
-        setSuccessMessage('Order items moved to your cart.');
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to reorder');
-    }
-  };
-
   const handleMoveWishlistToCart = async (productId) => {
     try {
       await cartAPI.addItem(productId, 1);
       const response = await wishlistAPI.removeItem(productId);
       if (response.success) {
         setWishlist(response.data?.items || []);
-        setSuccessMessage('Product moved from wishlist to cart.');
+        setSuccessMessage("Product moved from wishlist to cart.");
       }
     } catch (err) {
-      setError(err.message || 'Failed to move item to cart');
+      setError(err.message || "Failed to move item to cart");
     }
   };
 
@@ -140,7 +129,7 @@ const ProfilePage = () => {
         setWishlist(response.data?.items || []);
       }
     } catch (err) {
-      setError(err.message || 'Failed to remove wishlist item');
+      setError(err.message || "Failed to remove wishlist item");
     }
   };
 
@@ -177,7 +166,7 @@ const ProfilePage = () => {
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <p className="text-gray-600 text-sm">Name</p>
                     <p className="text-lg font-semibold">
-                      {displayUser.name || 'Not set'}
+                      {displayUser.name || "Not set"}
                     </p>
                   </div>
                   <div className="bg-gray-50 p-4 rounded-lg">
@@ -189,7 +178,7 @@ const ProfilePage = () => {
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <p className="text-gray-600 text-sm">Account Type</p>
                     <p className="text-lg font-semibold capitalize">
-                      {displayUser.accountType || 'customer'}
+                      {displayUser.accountType || "customer"}
                     </p>
                   </div>
                 </div>
@@ -233,7 +222,7 @@ const ProfilePage = () => {
                 <div className="mt-4 bg-gray-50 p-4 rounded-lg">
                   <p className="text-gray-600 text-sm">Account Health</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {accountOverview?.accountHealth || 'Good'}
+                    {accountOverview?.accountHealth || "Good"}
                   </p>
                 </div>
 
@@ -260,45 +249,76 @@ const ProfilePage = () => {
                   {orders.map((order) => (
                     <div
                       key={order._id}
-                      className="border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3"
+                      className="border border-gray-200 rounded-lg p-4 space-y-3"
                     >
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {order.orderNumber}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {new Date(order.createdAt).toLocaleString()}
-                        </p>
-                        <p className="text-sm mt-1">
-                          Total:{' '}
-                          <span className="font-semibold">
-                            ${order.total?.toFixed?.(2) || order.total}
-                          </span>
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2 flex-wrap">
+                      {/* Order header row */}
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-gray-900 text-sm">
+                            {order.orderNumber}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(order.createdAt).toLocaleString()}
+                          </p>
+                        </div>
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${
-                            order.status === 'delivered'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : order.status === 'shipped'
-                                ? 'bg-blue-100 text-blue-700'
-                                : 'bg-amber-100 text-amber-700'
+                          className={`px-3 py-1 rounded-full text-xs font-semibold uppercase w-fit ${
+                            order.status === "delivered"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : order.status === "shipped"
+                                ? "bg-blue-100 text-blue-700"
+                                : order.status === "confirmed"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-amber-100 text-amber-700"
                           }`}
                         >
                           {order.status}
                         </span>
+                      </div>
 
-                        <button
-                          onClick={() => handleReorder(order._id)}
-                          className="px-3 py-1.5 text-xs font-semibold bg-gray-900 text-white rounded-lg hover:bg-black"
-                        >
-                          Reorder
-                        </button>
+                      {/* Products list */}
+                      {order.items && order.items.length > 0 && (
+                        <div className="space-y-2 border-t border-gray-100 pt-3">
+                          {order.items.map((item, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center gap-3"
+                            >
+                              {item.image ? (
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="w-12 h-12 rounded-lg object-cover border border-gray-100 shrink-0"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-gray-100 shrink-0" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 truncate">
+                                  {item.name || "Product"}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Qty: {item.quantity || 1}
+                                </p>
+                              </div>
+                              <p className="text-sm font-bold text-gray-900 shrink-0">
+                                $
+                                {(
+                                  (item.price || 0) * (item.quantity || 1)
+                                ).toFixed(2)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
+                      {/* Total */}
+                      <div className="flex justify-between items-center border-t border-gray-100 pt-2">
                         <span className="text-xs text-gray-500">
-                          Track: {order.trackingNumber || 'Not available'}
+                          Track: {order.trackingNumber || "Not available"}
+                        </span>
+                        <span className="text-sm font-black text-gray-900">
+                          Total: ${Number(order.total || 0).toFixed(2)}
                         </span>
                       </div>
                     </div>

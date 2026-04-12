@@ -5,7 +5,8 @@ import { AlertCircle } from "lucide-react";
 const PaymentCancelled = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const transactionId = searchParams.get("tranId") || "N/A";
+  const transactionId =
+    searchParams.get("tran_id") || searchParams.get("tranId") || "N/A";
 
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center py-12">

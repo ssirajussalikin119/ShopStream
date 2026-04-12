@@ -1,47 +1,47 @@
-const mongoose = require('mongoose');
-const User = require('../models/User');
-const Product = require('../models/Product');
-const Order = require('../models/Order');
-const asyncHandler = require('../utils/asyncHandler');
-const sendResponse = require('../utils/sendResponse');
+const mongoose = require("mongoose");
+const User = require("../models/User");
+const Product = require("../models/Product");
+const Order = require("../models/Order");
+const asyncHandler = require("../utils/asyncHandler");
+const sendResponse = require("../utils/sendResponse");
 
-const slugify = (value = '') =>
+const slugify = (value = "") =>
   value
     .toString()
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-');
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-");
 
 const CATEGORY_CANONICAL = [
   {
-    slug: 'electronics',
-    name: 'Electronics',
-    aliases: ['electronics', 'electronic', 'tech', 'gadgets'],
+    slug: "electronics",
+    name: "Electronics",
+    aliases: ["electronics", "electronic", "tech", "gadgets"],
   },
   {
-    slug: 'ebooks',
-    name: 'Ebooks',
-    aliases: ['ebooks', 'ebook', 'book', 'books'],
+    slug: "ebooks",
+    name: "Ebooks",
+    aliases: ["ebooks", "ebook", "book", "books"],
   },
   {
-    slug: 'software-tools',
-    name: 'Softwares',
-    aliases: ['software-tools', 'software', 'softwares', 'tools'],
+    slug: "software-tools",
+    name: "Softwares",
+    aliases: ["software-tools", "software", "softwares", "tools"],
   },
   {
-    slug: 'accessories',
-    name: 'Accessories',
-    aliases: ['accessories', 'accessory'],
+    slug: "accessories",
+    name: "Accessories",
+    aliases: ["accessories", "accessory"],
   },
 ];
 
-const normalizeCategory = (rawValue = '') => {
-  const categoryName = String(rawValue || '').trim();
+const normalizeCategory = (rawValue = "") => {
+  const categoryName = String(rawValue || "").trim();
   const normalized = slugify(categoryName);
 
   const canonical = CATEGORY_CANONICAL.find(
-    (item) => item.slug === normalized || item.aliases.includes(normalized)
+    (item) => item.slug === normalized || item.aliases.includes(normalized),
   );
 
   if (canonical) {
@@ -58,7 +58,7 @@ const normalizeCategory = (rawValue = '') => {
 };
 
 const createSku = (categorySlug) => {
-  const prefix = (categorySlug || 'GEN').slice(0, 4).toUpperCase();
+  const prefix = (categorySlug || "GEN").slice(0, 4).toUpperCase();
   const uniq = Date.now().toString().slice(-6);
   const rand = Math.floor(Math.random() * 900 + 100);
   return `${prefix}-${uniq}-${rand}`;
@@ -66,10 +66,10 @@ const createSku = (categorySlug) => {
 
 // GET /api/seller/profile
 const getSellerProfile = asyncHandler(async (req, res) => {
-  return sendResponse(res, 200, true, 'Seller profile fetched successfully', {
+  return sendResponse(res, 200, true, "Seller profile fetched successfully", {
     _id: req.user._id,
-    shopName: req.user.shopName || '',
-    shopLogo: req.user.shopLogo || '',
+    shopName: req.user.shopName || "",
+    shopLogo: req.user.shopLogo || "",
     email: req.user.email,
     joinedAt: req.user.createdAt,
   });
@@ -77,14 +77,14 @@ const getSellerProfile = asyncHandler(async (req, res) => {
 
 // PUT /api/seller/profile
 const updateSellerProfile = asyncHandler(async (req, res) => {
-  console.log('[updateSellerProfile] Received request body:', req.body);
-  console.log('[updateSellerProfile] User context:', {
+  console.log("[updateSellerProfile] Received request body:", req.body);
+  console.log("[updateSellerProfile] User context:", {
     userId: req.user?._id,
     currentEmail: req.user?.email,
     currentShopName: req.user?.shopName,
   });
 
-  const { shopName = '', shopLogo = '', email } = req.body;
+  const { shopName = "", shopLogo = "", email } = req.body;
 
   if (email && email !== req.user.email) {
     const normalizedEmail = email.toLowerCase().trim();
@@ -95,33 +95,33 @@ const updateSellerProfile = asyncHandler(async (req, res) => {
 
     if (existing) {
       console.warn(
-        '[updateSellerProfile] Email already in use:',
-        normalizedEmail
+        "[updateSellerProfile] Email already in use:",
+        normalizedEmail,
       );
-      return sendResponse(res, 409, false, 'Email is already in use');
+      return sendResponse(res, 409, false, "Email is already in use");
     }
 
     req.user.email = normalizedEmail;
-    console.log('[updateSellerProfile] Email updated to:', normalizedEmail);
+    console.log("[updateSellerProfile] Email updated to:", normalizedEmail);
   }
 
   req.user.shopName = shopName.trim();
   req.user.shopLogo = shopLogo.trim();
-  console.log('[updateSellerProfile] Updated shopName:', req.user.shopName);
-  console.log('[updateSellerProfile] Updated shopLogo:', req.user.shopLogo);
+  console.log("[updateSellerProfile] Updated shopName:", req.user.shopName);
+  console.log("[updateSellerProfile] Updated shopLogo:", req.user.shopLogo);
 
   try {
     await req.user.save();
-    console.log('[updateSellerProfile] User saved successfully');
+    console.log("[updateSellerProfile] User saved successfully");
   } catch (saveErr) {
-    console.error('[updateSellerProfile] Error during save:', saveErr.message);
+    console.error("[updateSellerProfile] Error during save:", saveErr.message);
     throw saveErr;
   }
 
   console.log(
-    '[updateSellerProfile] Sending success response with updated data'
+    "[updateSellerProfile] Sending success response with updated data",
   );
-  return sendResponse(res, 200, true, 'Seller profile updated successfully', {
+  return sendResponse(res, 200, true, "Seller profile updated successfully", {
     _id: req.user._id,
     shopName: req.user.shopName,
     shopLogo: req.user.shopLogo,
@@ -135,11 +135,11 @@ const addSellerProduct = asyncHandler(async (req, res) => {
   const {
     name,
     price,
-    description = '',
+    description = "",
     stockQuantity,
     category,
     images = [],
-    status = 'published',
+    status = "published",
   } = req.body;
 
   if (!name || price == null || stockQuantity == null || !category) {
@@ -147,19 +147,19 @@ const addSellerProduct = asyncHandler(async (req, res) => {
       res,
       400,
       false,
-      'name, price, stockQuantity and category are required'
+      "name, price, stockQuantity and category are required",
     );
   }
 
   const normalizedImages = Array.isArray(images)
     ? images.filter(Boolean)
-    : String(images || '')
-        .split(',')
+    : String(images || "")
+        .split(",")
         .map((img) => img.trim())
         .filter(Boolean);
 
   const primaryImage =
-    normalizedImages[0] || 'https://via.placeholder.com/600x400?text=Product';
+    normalizedImages[0] || "https://via.placeholder.com/600x400?text=Product";
   const { categorySlug, categoryName } = normalizeCategory(category);
 
   const product = await Product.create({
@@ -168,8 +168,8 @@ const addSellerProduct = asyncHandler(async (req, res) => {
     name: name.trim(),
     categorySlug,
     categoryName,
-    subcategory: 'General',
-    brand: req.user.shopName || req.user.name || 'Seller Store',
+    subcategory: "General",
+    brand: req.user.shopName || req.user.name || "Seller Store",
     description: description.trim(),
     price: Number(price),
     image: primaryImage,
@@ -177,10 +177,10 @@ const addSellerProduct = asyncHandler(async (req, res) => {
     stockCount: Number(stockQuantity),
     inStock: Number(stockQuantity) > 0,
     isFeatured: false,
-    status: status === 'published' ? 'published' : 'draft',
+    status: status === "published" ? "published" : "draft",
   });
 
-  return sendResponse(res, 201, true, 'Product added successfully', product);
+  return sendResponse(res, 201, true, "Product added successfully", product);
 });
 
 const getSoldCountMap = async (productIds) => {
@@ -193,19 +193,19 @@ const getSoldCountMap = async (productIds) => {
   const soldRows = await Order.aggregate([
     {
       $match: {
-        status: { $in: ['delivered', 'completed'] },
+        status: { $in: ["delivered", "completed"] },
       },
     },
-    { $unwind: '$items' },
+    { $unwind: "$items" },
     {
       $match: {
-        'items.productId': { $in: objectIds },
+        "items.productId": { $in: objectIds },
       },
     },
     {
       $group: {
-        _id: '$items.productId',
-        soldCount: { $sum: '$items.quantity' },
+        _id: "$items.productId",
+        soldCount: { $sum: "$items.quantity" },
       },
     },
   ]);
@@ -223,7 +223,7 @@ const getSellerProducts = asyncHandler(async (req, res) => {
     .lean();
 
   const soldCountMap = await getSoldCountMap(
-    products.map((item) => item._id.toString())
+    products.map((item) => item._id.toString()),
   );
 
   const withSales = products.map((item) => ({
@@ -235,8 +235,8 @@ const getSellerProducts = asyncHandler(async (req, res) => {
     res,
     200,
     true,
-    'Seller products fetched successfully',
-    withSales
+    "Seller products fetched successfully",
+    withSales,
   );
 });
 
@@ -251,7 +251,7 @@ const updateSellerProduct = asyncHandler(async (req, res) => {
     sellerId: req.user._id,
   });
   if (!product) {
-    return sendResponse(res, 404, false, 'Product not found');
+    return sendResponse(res, 404, false, "Product not found");
   }
 
   if (name != null) product.name = String(name).trim();
@@ -272,8 +272,8 @@ const updateSellerProduct = asyncHandler(async (req, res) => {
   if (images != null) {
     const normalizedImages = Array.isArray(images)
       ? images.filter(Boolean)
-      : String(images || '')
-          .split(',')
+      : String(images || "")
+          .split(",")
           .map((img) => img.trim())
           .filter(Boolean);
 
@@ -284,12 +284,12 @@ const updateSellerProduct = asyncHandler(async (req, res) => {
   }
 
   if (status != null) {
-    product.status = status === 'published' ? 'published' : 'draft';
+    product.status = status === "published" ? "published" : "draft";
   }
 
   await product.save();
 
-  return sendResponse(res, 200, true, 'Product updated successfully', product);
+  return sendResponse(res, 200, true, "Product updated successfully", product);
 });
 
 // PATCH /api/seller/products/:productId/status
@@ -301,14 +301,14 @@ const toggleProductStatus = asyncHandler(async (req, res) => {
     sellerId: req.user._id,
   });
   if (!product) {
-    return sendResponse(res, 404, false, 'Product not found');
+    return sendResponse(res, 404, false, "Product not found");
   }
 
-  const currentStatus = String(product.status || '').toLowerCase();
-  const nextStatus = currentStatus === 'published' ? 'draft' : 'published';
+  const currentStatus = String(product.status || "").toLowerCase();
+  const nextStatus = currentStatus === "published" ? "draft" : "published";
 
   const normalizedCategory = normalizeCategory(
-    product.categorySlug || product.categoryName || ''
+    product.categorySlug || product.categoryName || "",
   );
   if (normalizedCategory.categorySlug) {
     product.categorySlug = normalizedCategory.categorySlug;
@@ -320,13 +320,13 @@ const toggleProductStatus = asyncHandler(async (req, res) => {
   product.status = nextStatus;
   await product.save();
 
-  console.log('[toggleProductStatus] Product status updated:', {
+  console.log("[toggleProductStatus] Product status updated:", {
     productId: product._id,
     previousStatus: currentStatus,
     nextStatus: product.status,
   });
 
-  return sendResponse(res, 200, true, 'Product status updated', {
+  return sendResponse(res, 200, true, "Product status updated", {
     _id: product._id,
     status: product.status,
   });
@@ -342,10 +342,90 @@ const deleteSellerProduct = asyncHandler(async (req, res) => {
   });
 
   if (!deleted) {
-    return sendResponse(res, 404, false, 'Product not found');
+    return sendResponse(res, 404, false, "Product not found");
   }
 
-  return sendResponse(res, 200, true, 'Product deleted successfully');
+  return sendResponse(res, 200, true, "Product deleted successfully");
+});
+
+const getSellerOrders = asyncHandler(async (req, res) => {
+  // Get all products belonging to this seller
+  const sellerProducts = await Product.find({ sellerId: req.user._id })
+    .select("_id name")
+    .lean();
+
+  const productIds = sellerProducts.map((p) => p._id);
+
+  if (productIds.length === 0) {
+    return sendResponse(res, 200, true, "No seller orders", []);
+  }
+
+  // Find orders containing seller's products
+  const orders = await Order.find({
+    "items.productId": { $in: productIds },
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return sendResponse(
+    res,
+    200,
+    true,
+    "Seller orders fetched successfully",
+    orders,
+  );
+});
+
+const updateSellerOrderStatus = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+  const { status } = req.body;
+
+  const normalizedStatus = String(status || "")
+    .trim()
+    .toLowerCase();
+  const allowedStatuses = new Set([
+    "pending",
+    "processing",
+    "shipped",
+    "delivered",
+  ]);
+
+  if (!allowedStatuses.has(normalizedStatus)) {
+    return sendResponse(
+      res,
+      400,
+      false,
+      "status must be one of: Pending, Processing, Shipped, Delivered",
+    );
+  }
+
+  const sellerProducts = await Product.find({ sellerId: req.user._id })
+    .select("_id")
+    .lean();
+
+  const productIds = sellerProducts.map((product) => product._id);
+
+  if (productIds.length === 0) {
+    return sendResponse(res, 404, false, "No seller products found");
+  }
+
+  const order = await Order.findOne({
+    _id: orderId,
+    "items.productId": { $in: productIds },
+  });
+
+  if (!order) {
+    return sendResponse(res, 404, false, "Order not found");
+  }
+
+  order.status = normalizedStatus;
+  await order.save();
+
+  return sendResponse(res, 200, true, "Order status updated successfully", {
+    _id: order._id,
+    orderNumber: order.orderNumber,
+    status: order.status,
+  });
 });
 
 module.exports = {
@@ -356,4 +436,6 @@ module.exports = {
   updateSellerProduct,
   toggleProductStatus,
   deleteSellerProduct,
+  getSellerOrders,
+  updateSellerOrderStatus,
 };

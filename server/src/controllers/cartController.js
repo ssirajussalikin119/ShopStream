@@ -1,8 +1,11 @@
-const Cart = require('../models/Cart');
-const Product = require('../models/Product');
-const Order = require('../models/Order');
-const asyncHandler = require('../utils/asyncHandler');
-const sendResponse = require('../utils/sendResponse');
+const Cart = require("../models/Cart");
+const Product = require("../models/Product");
+const Order = require("../models/Order");
+const asyncHandler = require("../utils/asyncHandler");
+const sendResponse = require("../utils/sendResponse");
+
+const createTransactionId = () =>
+  `TXN-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
 // Helper: get or create cart for user
 const getOrCreateCart = async (userId) => {
@@ -16,7 +19,7 @@ const getOrCreateCart = async (userId) => {
 // GET /api/cart  — fetch current user's cart
 const getCart = asyncHandler(async (req, res) => {
   const cart = await getOrCreateCart(req.user._id);
-  return sendResponse(res, 200, true, 'Cart fetched successfully', cart);
+  return sendResponse(res, 200, true, "Cart fetched successfully", cart);
 });
 
 // POST /api/cart/items  — add or increment an item
@@ -25,23 +28,23 @@ const addItem = asyncHandler(async (req, res) => {
 
   if (!productId) {
     res.status(400);
-    throw new Error('productId is required');
+    throw new Error("productId is required");
   }
 
   const product = await Product.findById(productId).lean();
   if (!product) {
     res.status(404);
-    throw new Error('Product not found');
+    throw new Error("Product not found");
   }
 
   if (!product.inStock || product.stockCount < 1) {
     res.status(400);
-    throw new Error('Product is out of stock');
+    throw new Error("Product is out of stock");
   }
 
   const cart = await getOrCreateCart(req.user._id);
   const existingIndex = cart.items.findIndex(
-    (i) => i.productId.toString() === productId
+    (i) => i.productId.toString() === productId,
   );
 
   if (existingIndex >= 0) {
@@ -49,7 +52,7 @@ const addItem = asyncHandler(async (req, res) => {
     if (newQty > product.stockCount) {
       res.status(400);
       throw new Error(
-        `Only ${product.stockCount} units available. You already have ${cart.items[existingIndex].quantity} in your cart.`
+        `Only ${product.stockCount} units available. You already have ${cart.items[existingIndex].quantity} in your cart.`,
       );
     }
     cart.items[existingIndex].quantity = newQty;
@@ -71,7 +74,7 @@ const addItem = asyncHandler(async (req, res) => {
   }
 
   await cart.save();
-  return sendResponse(res, 200, true, 'Item added to cart', cart);
+  return sendResponse(res, 200, true, "Item added to cart", cart);
 });
 
 // PATCH /api/cart/items/:productId  — update quantity of an item
@@ -81,22 +84,22 @@ const updateItem = asyncHandler(async (req, res) => {
 
   if (quantity == null || Number(quantity) < 0) {
     res.status(400);
-    throw new Error('Valid quantity required (0 to remove)');
+    throw new Error("Valid quantity required (0 to remove)");
   }
 
   const cart = await Cart.findOne({ user: req.user._id });
   if (!cart) {
     res.status(404);
-    throw new Error('Cart not found');
+    throw new Error("Cart not found");
   }
 
   const index = cart.items.findIndex(
-    (i) => i.productId.toString() === productId
+    (i) => i.productId.toString() === productId,
   );
 
   if (index < 0) {
     res.status(404);
-    throw new Error('Item not found in cart');
+    throw new Error("Item not found in cart");
   }
 
   if (Number(quantity) === 0) {
@@ -104,7 +107,7 @@ const updateItem = asyncHandler(async (req, res) => {
   } else {
     // Stock check
     const product = await Product.findById(productId)
-      .select('stockCount')
+      .select("stockCount")
       .lean();
     if (product && Number(quantity) > product.stockCount) {
       res.status(400);
@@ -114,7 +117,7 @@ const updateItem = asyncHandler(async (req, res) => {
   }
 
   await cart.save();
-  return sendResponse(res, 200, true, 'Cart updated', cart);
+  return sendResponse(res, 200, true, "Cart updated", cart);
 });
 
 // DELETE /api/cart/items/:productId  — remove a single item
@@ -124,25 +127,25 @@ const removeItem = asyncHandler(async (req, res) => {
   const cart = await Cart.findOne({ user: req.user._id });
   if (!cart) {
     res.status(404);
-    throw new Error('Cart not found');
+    throw new Error("Cart not found");
   }
 
   cart.items = cart.items.filter((i) => i.productId.toString() !== productId);
 
   await cart.save();
-  return sendResponse(res, 200, true, 'Item removed from cart', cart);
+  return sendResponse(res, 200, true, "Item removed from cart", cart);
 });
 
 // DELETE /api/cart  — clear entire cart
 const clearCart = asyncHandler(async (req, res) => {
   const cart = await Cart.findOne({ user: req.user._id });
   if (!cart) {
-    return sendResponse(res, 200, true, 'Cart already empty', { items: [] });
+    return sendResponse(res, 200, true, "Cart already empty", { items: [] });
   }
 
   cart.items = [];
   await cart.save();
-  return sendResponse(res, 200, true, 'Cart cleared', cart);
+  return sendResponse(res, 200, true, "Cart cleared", cart);
 });
 
 // POST /api/cart/checkout  — mock checkout (clears cart, returns order summary)
@@ -151,7 +154,7 @@ const checkout = asyncHandler(async (req, res) => {
 
   if (!cart || cart.items.length === 0) {
     res.status(400);
-    throw new Error('Cart is empty');
+    throw new Error("Cart is empty");
   }
 
   const subtotal = cart.subtotal;
@@ -162,8 +165,9 @@ const checkout = asyncHandler(async (req, res) => {
   const order = await Order.create({
     user: req.user._id,
     orderNumber,
+    transactionId: createTransactionId(),
     items: cart.items,
-    status: 'pending',
+    status: "pending",
     subtotal,
     tax,
     total,
@@ -174,7 +178,7 @@ const checkout = asyncHandler(async (req, res) => {
   cart.items = [];
   await cart.save();
 
-  return sendResponse(res, 200, true, 'Order placed successfully', {
+  return sendResponse(res, 200, true, "Order placed successfully", {
     _id: order._id,
     orderNumber: order.orderNumber,
     status: order.status,

@@ -111,11 +111,13 @@ export const orderAPI = {
   },
   getOrders: async () => {
     const response = await api.get("/orders");
-    return response.data || [];
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.data)) return response.data;
+    return response?.data?.orders || response?.orders || [];
   },
   getOrder: async (orderId) => {
     const response = await api.get(`/orders/${orderId}`);
-    return response.data;
+    return response?.data || response;
   },
 };
 
@@ -135,7 +137,7 @@ export const newsletterAPI = {
 };
 
 export const aiAPI = {
-  sendMessage: (message) => api.post('/ai/chat', { message }),
+  sendMessage: (message) => api.post("/ai/chat", { message }),
 };
 
 export const profileAPI = {
@@ -158,6 +160,9 @@ export const sellerAPI = {
   getProfile: () => api.get("/seller/profile"),
   updateProfile: (payload) => api.put("/seller/profile", payload),
   getProducts: () => api.get("/seller/products"),
+  getOrders: () => api.get("/seller/orders"),
+  updateOrderStatus: (orderId, status) =>
+    api.patch(`/seller/orders/${orderId}/status`, { status }),
   addProduct: (payload) => api.post("/seller/products", payload),
   updateProduct: (productId, payload) =>
     api.put(`/seller/products/${productId}`, payload),

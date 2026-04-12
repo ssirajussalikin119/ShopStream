@@ -4,9 +4,14 @@ const Offer = require("../models/Offer");
 const asyncHandler = require("../utils/asyncHandler");
 const sendResponse = require("../utils/sendResponse");
 
+const createTransactionId = () =>
+  `TXN-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+
 // GET /api/orders — get current user's order history
 const getOrders = asyncHandler(async (req, res) => {
-  const orders = await Order.find({ user: req.user._id })
+  const orders = await Order.find({
+    $or: [{ user: req.user._id }, { "customerInfo.userId": req.user._id }],
+  })
     .sort({ createdAt: -1 })
     .lean();
 
@@ -46,7 +51,11 @@ const placeOrder = asyncHandler(async (req, res) => {
     const now = new Date();
     const offer = await Offer.findOne({ code: promoCode.toUpperCase() });
 
-    if (offer && offer.isActive && (!offer.expiresAt || now < offer.expiresAt)) {
+    if (
+      offer &&
+      offer.isActive &&
+      (!offer.expiresAt || now < offer.expiresAt)
+    ) {
       if (subtotal >= offer.minOrderAmount) {
         if (offer.discountType === "percentage") {
           discount = +(subtotal * (offer.discountValue / 100)).toFixed(2);
@@ -67,6 +76,7 @@ const placeOrder = asyncHandler(async (req, res) => {
   const order = await Order.create({
     user: req.user._id,
     orderNumber,
+    transactionId: createTransactionId(),
     items: cart.items,
     subtotal,
     tax,
@@ -83,7 +93,7 @@ const placeOrder = asyncHandler(async (req, res) => {
 
   return sendResponse(res, 201, true, "Order placed successfully", {
     _id: order._id,
-    orderId: order.orderNumber,        // Cart.jsx uses order.orderId
+    orderId: order.orderNumber, // Cart.jsx uses order.orderId
     orderNumber: order.orderNumber,
     status: order.status,
     items: order.items,

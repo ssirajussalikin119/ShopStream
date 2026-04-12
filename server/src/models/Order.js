@@ -48,6 +48,11 @@ const orderSchema = new mongoose.Schema(
     },
     items: { type: [orderItemSchema], default: [] },
     customerInfo: {
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
       name: { type: String, default: "", trim: true },
       email: { type: String, default: "", trim: true, lowercase: true },
       phone: { type: String, default: "", trim: true },
@@ -78,6 +83,20 @@ const orderSchema = new mongoose.Schema(
       ],
       default: "pending",
       index: true,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "failed", "cancelled"],
+      default: "pending",
+      index: true,
+    },
+    paymentVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+    gatewayResponse: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
     },
     amount: { type: Number, default: 0, min: 0 },
     subtotal: { type: Number, required: true, min: 0 },
